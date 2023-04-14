@@ -122,7 +122,7 @@ TEST_F(Audio_RegisterAudioPluginsScenarioTest, RegisterNewPlugins)
         "/some/test/path/to/plugin/FFF.vst3", // incompatible (will crash)
     };
 
-    for (IAudioPluginsScannerPtr scanner : m_scanners) {
+    for (const IAudioPluginsScannerPtr& scanner : m_scanners) {
         AudioPluginsScannerMock* mock = dynamic_cast<AudioPluginsScannerMock*>(scanner.get());
         ASSERT_TRUE(mock);
 
@@ -204,7 +204,7 @@ TEST_F(Audio_RegisterAudioPluginsScenarioTest, RegisterNewPlugins_NoNewPlugins)
         "/some/test/path/to/plugin/CCC.vst3",
     };
 
-    for (IAudioPluginsScannerPtr scanner : m_scanners) {
+    for (const IAudioPluginsScannerPtr& scanner : m_scanners) {
         AudioPluginsScannerMock* mock = dynamic_cast<AudioPluginsScannerMock*>(scanner.get());
         ASSERT_TRUE(mock);
 
