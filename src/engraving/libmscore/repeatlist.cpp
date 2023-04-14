@@ -809,6 +809,7 @@ void RepeatList::unwind()
         continueAt.first = _rlElements.cend();
         forceFinalRepeat = false;
 
+        // This is a giant mess of a potential memory leak
         rs = new RepeatSegment(playbackCount);
         rs->addMeasure((*repeatListElementIt)->measure);
         ++repeatListElementIt;

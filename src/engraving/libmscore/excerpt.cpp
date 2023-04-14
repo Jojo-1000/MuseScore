@@ -998,6 +998,10 @@ static MeasureBase* cloneMeasure(MeasureBase* mb, Score* score, const Score* osc
             }
         }
     }
+    else {
+        ASSERT_X("MeasureBase is none of the expected types");
+        return nullptr;
+    }
 
     nmb->linkTo(mb);
     for (EngravingItem* e : mb->el()) {

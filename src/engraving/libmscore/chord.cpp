@@ -3413,6 +3413,10 @@ EngravingItem* Chord::nextElement()
         e = score()->selection().elements().front();
     }
 
+    IF_ASSERT_FAILED_X(e, "EngravingItem is null (no selection?)") {
+        return ChordRest::nextElement();
+    }
+
     switch (e->type()) {
     case ElementType::SYMBOL:
     case ElementType::IMAGE:
@@ -3506,6 +3510,10 @@ EngravingItem* Chord::prevElement()
     if (!e && !score()->selection().elements().empty()) {
         e = score()->selection().elements().back();
     }
+    IF_ASSERT_FAILED_X(e, "EngravingItem is null (no selection?)") {
+        return ChordRest::prevElement();
+    }
+
     switch (e->type()) {
     case ElementType::NOTE: {
         if (e == _notes.back()) {
@@ -3591,6 +3599,11 @@ EngravingItem* Chord::prevSegmentElement()
     if (!el && !score()->selection().elements().empty()) {
         el = score()->selection().elements().front();
     }
+
+    IF_ASSERT_FAILED_X(el, "EngravingItem is null (no selection?)") {
+        return ChordRest::prevSegmentElement();
+    }
+
     EngravingItem* e = segment()->lastInPrevSegments(el->staffIdx());
     if (e) {
         if (e->isChord()) {

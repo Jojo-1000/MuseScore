@@ -233,6 +233,11 @@ public:
         if (m_numerator == -1 && m_denominator == 1) {                  // HACK
             return -1;
         }
+        // Prevent divide by zero
+        assert(isValid());
+        if(!isValid()) {
+            return 0;
+        }
 
         // Constants::division     - ticks per quarter note
         // Constants::division * 4 - ticks per whole note

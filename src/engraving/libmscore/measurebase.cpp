@@ -58,7 +58,9 @@ MeasureBase::MeasureBase(const MeasureBase& m)
     _noOffset = m._noOffset;
 
     for (EngravingItem* e : m._el) {
-        add(e->clone());
+        // No virtual dispatch in constructor (also inside add)
+        // Should not use this constructor in child classes if add, triggerLayout or tick are overridden
+        MeasureBase::add(e->clone());
     }
 }
 

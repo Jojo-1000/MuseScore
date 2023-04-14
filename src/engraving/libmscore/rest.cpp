@@ -95,11 +95,13 @@ Rest::Rest(const Rest& r, bool link)
     m_sym      = r.m_sym;
     m_dotline  = r.m_dotline;
     for (NoteDot* dot : r.m_dots) {
+        // Bypasses virtual dispatch
         add(Factory::copyNoteDot(*dot));
     }
 
     if (r._deadSlapped) {
         DeadSlapped* ndc = Factory::copyDeadSlapped(*r._deadSlapped);
+        // Bypasses virtual dispatch
         add(ndc);
         if (link) {
             score()->undo(new Link(ndc, r._deadSlapped));

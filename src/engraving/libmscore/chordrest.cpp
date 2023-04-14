@@ -1032,6 +1032,10 @@ EngravingItem* ChordRest::nextElement()
     if (!e && !score()->selection().elements().empty()) {
         e = score()->selection().elements().front();
     }
+    IF_ASSERT_FAILED_X(e, "EngravingItem is null (no selection?)") {
+        return nullptr;
+    }
+
     switch (e->type()) {
     case ElementType::ARTICULATION:
     case ElementType::LYRICS: {
@@ -1066,6 +1070,11 @@ EngravingItem* ChordRest::prevElement()
     if (!e && !score()->selection().elements().empty()) {
         e = score()->selection().elements().back();
     }
+
+    IF_ASSERT_FAILED_X(e, "EngravingItem is null (no selection?)") {
+        return nullptr;
+    }
+
     switch (e->type()) {
     case ElementType::ARTICULATION:
     case ElementType::LYRICS: {

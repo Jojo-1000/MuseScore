@@ -482,6 +482,10 @@ void Score::writeSegments(XmlWriter& xml, track_idx_t strack, track_idx_t etrack
     Fraction endTick   = eseg ? eseg->tick() : lastMeasure()->endTick();
     bool clip          = xml.context()->clipboardmode();
 
+    IF_ASSERT_FAILED_X(sseg, "Start segment is null") {
+        return;
+    }
+
     // in clipboard mode, ls might be in an mmrest
     // since we are traversing regular measures,
     // force them out of mmRest

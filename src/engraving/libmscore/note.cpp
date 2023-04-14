@@ -2162,6 +2162,7 @@ void Note::setDotY(DirectionV pos)
                 // if fret marks above lines, raise the dots by half line distance
                 y = -0.5;
             }
+            // else if?
             if (pos == DirectionV::AUTO) {
                 bool oddVoice = voice() & 1;
                 y = oddVoice ? 0.5 : -0.5;

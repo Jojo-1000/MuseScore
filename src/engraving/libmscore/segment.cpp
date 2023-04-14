@@ -1612,6 +1612,9 @@ EngravingItem* Segment::nextElementOfSegment(Segment* s, EngravingItem* e, staff
 
 EngravingItem* Segment::prevElementOfSegment(Segment* s, EngravingItem* e, staff_idx_t activeStaff)
 {
+    IF_ASSERT_FAILED_X(s != nullptr && e != nullptr, "Segment and EngravingItem must not be null") {
+        return nullptr;
+    }
     for (int track = static_cast<int>(score()->nstaves() * VOICES) - 1; track > 0; --track) {
         if (s->element(track) == 0) {
             continue;

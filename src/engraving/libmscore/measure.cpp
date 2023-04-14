@@ -3146,6 +3146,9 @@ EngravingItem* Measure::nextElementStaff(staff_idx_t staff)
     if (!e && !score()->selection().elements().empty()) {
         e = score()->selection().elements().front();
     }
+    IF_ASSERT_FAILED_X(e, "EngravingItem is null (no selection?)") {
+        return score()->lastElement();
+    }
 
     // handle measure elements
     if (e->explicitParent() == this) {
@@ -3181,6 +3184,9 @@ EngravingItem* Measure::prevElementStaff(staff_idx_t staff)
     EngravingItem* e = score()->selection().element();
     if (!e && !score()->selection().elements().empty()) {
         e = score()->selection().elements().front();
+    }
+    IF_ASSERT_FAILED_X(e, "EngravingItem is null (no selection?)") {
+        return score()->firstElement();
     }
 
     // handle measure elements
@@ -4611,7 +4617,7 @@ void Measure::stretchMeasureInPracticeMode(double targetWidth)
             s = s->next();
         }
 
-        double x = s->pos().x();
+        double x = s ? s->pos().x() : 0.0;
         while (s) {
 //            if (!s->enabled() || !s->visible()) {
 //                s = s->nextEnabled();

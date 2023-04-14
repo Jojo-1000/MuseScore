@@ -845,6 +845,8 @@ void TRead::read(KeySig* s, XmlReader& e, ReadContext& ctx)
         const AsciiStringView tag(e.name());
         if (tag == "CustDef" || tag == "KeySym") {
             CustDef cd;
+            // Requires initialization if first element is "pos"
+            cd.sym = SymId::noSym;
             while (e.readNextStartElement()) {
                 const AsciiStringView t(e.name());
                 if (t == "sym") {

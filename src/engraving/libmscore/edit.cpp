@@ -866,6 +866,10 @@ TextBase* Score::addText(TextStyleType type, EngravingItem* destinationElement, 
 
 bool Score::rewriteMeasures(Measure* fm, Measure* lm, const Fraction& ns, staff_idx_t staffIdx)
 {
+    IF_ASSERT_FAILED_X(fm != nullptr && lm != nullptr, "First and last measure must not be null") {
+        return false;
+    }
+
     if (staffIdx != mu::nidx) {
         // local timesig
         // don't actually rewrite, just update measure rest durations
@@ -5936,7 +5940,7 @@ void Score::undoAddElement(EngravingItem* element, bool addToLinkedStaves, bool 
                 // find corresponding notes in linked staff
                 // accounting for grace notes and cross-staff notation
                 int sm = 0;
-                if (cr1->staffIdx() != cr2->staffIdx()) {
+                if (cr2 && cr1->staffIdx() != cr2->staffIdx()) {
                     sm = static_cast<int>(cr2->staffIdx() - cr1->staffIdx());
                 }
                 Chord* c1 = findLinkedChord(cr1, score->staff(staffIdx));

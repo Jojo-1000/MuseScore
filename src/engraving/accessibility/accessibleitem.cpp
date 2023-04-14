@@ -196,7 +196,7 @@ QString AccessibleItem::accessibleName() const
                    .arg(m_element->screenReaderInfo().toQString())
                    .arg(m_element->visible() ? "" : " " + qtrc("engraving", "invisible"))
                    .arg(!barsAndBeats.isEmpty() ? ("; " + barsAndBeats) : "")
-                   .arg(root->isRangeSelection() ? ("; " + qtrc("engraving", "selected")) : "");
+                   .arg((root && root->isRangeSelection()) ? ("; " + qtrc("engraving", "selected")) : "");
 
     return readable(name);
 }

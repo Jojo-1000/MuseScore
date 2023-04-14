@@ -964,6 +964,10 @@ Segment* Score::setNoteRest(Segment* segment, track_idx_t track, NoteVal nval, F
         //  Note does not fit on current measure, create Tie to
         //  next part of note
         if (!isRest) {
+            // could be caused by n == 0
+            IF_ASSERT_FAILED_X(nr, "nr is null (empty duration list)") {
+                break;
+            }
             tie = Factory::createTie(this->dummy());
             tie->setStartNote((Note*)nr);
             tie->setTick(tie->startNote()->tick());
@@ -3810,6 +3814,11 @@ Segment* Score::setChord(Segment* segment, track_idx_t track, const Chord* chord
         //
         //  Note does not fit on current measure, create Tie to
         //  next part of note
+
+        // could be caused by n == 0
+        IF_ASSERT_FAILED_X(nr, "nr is null (empty duration list)") {
+            break;
+        }
         std::vector<Note*> notes = nr->notes();
         for (size_t i = 0; i < notes.size(); ++i) {
             tie[i] = Factory::createTie(this->dummy());

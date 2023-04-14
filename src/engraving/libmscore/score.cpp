@@ -2227,6 +2227,10 @@ bool Score::appendMeasuresFromScore(Score* score, const Fraction& startTick, con
 
     Measure* firstAppendedMeasure = tick2measure(tickOfAppend);
 
+    IF_ASSERT_FAILED_X(firstAppendedMeasure, "First appended measure is null") {
+        return false;
+    }
+
     // if the appended score has less staves,
     // make sure the measures have full measure rest
     for (Measure* m = firstAppendedMeasure; m; m = m->nextMeasure()) {
@@ -2315,7 +2319,8 @@ bool Score::appendMeasuresFromScore(Score* score, const Fraction& startTick, con
     }
 
     // check if section starts with a pick-up measure to be merged with end of previous section
-    Measure* cm = firstAppendedMeasure, * pm = cm->prevMeasure();
+    Measure* cm = firstAppendedMeasure;
+    Measure* pm = cm->prevMeasure();
     if (pm->timesig() == cm->timesig() && pm->ticks() + cm->ticks() == cm->timesig()) {
         cmdJoinMeasure(pm, cm);
     }
@@ -3009,6 +3014,10 @@ void Score::sortStaves(std::vector<staff_idx_t>& dst)
             curPart->clearStaves();
             _parts.push_back(curPart);
         }
+        IF_ASSERT_FAILED_X(curPart, "Current part is null") {
+            break;
+        }
+
         curPart->appendStaff(staff);
         dl.push_back(staff);
         for (size_t itrack = 0; itrack < VOICES; ++itrack) {
@@ -3519,6 +3528,9 @@ void Score::switchToPageMode()
 
 void Score::selectAdd(EngravingItem* e)
 {
+    IF_ASSERT_FAILED_X(e, "EnvgravingItem must not be null") {
+        return;
+    }
     SelState selState = _selection.state();
 
     if (_selection.isRange()) {
@@ -4688,6 +4700,8 @@ ChordRest* Score::cmdNextPrevSystem(ChordRest* cr, bool next)
     // Case: Go to previous system
     else {
         auto currentSegment = cr->segment();
+        // TODO: Untangle this mess and add null checks
+
         // Only go to previous system's beginning if user is already at the absolute beginning of current system
         // and not in first measure of entire score
         if ((destinationMeasure != firstMeasure() && destinationMeasure != firstMeasureMM())
@@ -5189,6 +5203,10 @@ String Score::createRehearsalMarkText(RehearsalMark* current) const
 
 String Score::nextRehearsalMarkText(RehearsalMark* previous, RehearsalMark* current) const
 {
+    IF_ASSERT_FAILED_X(previous, "Previous rehearsal mark must not be null") {
+        return u"";
+    }
+
     String previousText = previous->xmlText();
     String fallback = current ? current->xmlText() : previousText + u"'";
 
