@@ -2398,8 +2398,13 @@ std::pair<double, double> Segment::computeCellWidth(const std::vector<int>& visi
         return { 0, 0 };
     }
 
-    auto calculateWidth = [measure = measure(), sc = score()->masterScore()](ChordRest* cr) {
-        auto quantum = measure->quantumOfSegmentCell();
+    Measure* meas = measure();
+    MasterScore* sc = score()->masterScore();
+    if(!meas || !sc) {
+        return { 0, 0 };
+    }
+    auto calculateWidth = [meas,sc](ChordRest* cr) {
+        auto quantum = meas->quantumOfSegmentCell();
         return sc->widthOfSegmentCell()
                * sc->spatium()
                * cr->globalTicks().numerator() / cr->globalTicks().denominator()

@@ -1010,6 +1010,9 @@ bool Score::rewriteMeasures(Measure* fm, Measure* lm, const Fraction& ns, staff_
         //
         // insert new calculated measures
         //
+        IF_ASSERT_FAILED_X(nfm != nullptr && nlm != nullptr, "New measures to insert are null") {
+            return false;
+        }
         nfm->setPrev(m1->prev());
         nlm->setNext(m2->next());
         s->undo(new InsertMeasures(nfm, nlm));
@@ -5934,6 +5937,7 @@ void Score::undoAddElement(EngravingItem* element, bool addToLinkedStaves, bool 
                 Tie* tie       = toTie(element);
                 Note* n1       = tie->startNote();
                 Note* n2       = tie->endNote();
+
                 Chord* cr1     = n1->chord();
                 Chord* cr2     = n2 ? n2->chord() : 0;
 
@@ -5946,7 +5950,7 @@ void Score::undoAddElement(EngravingItem* element, bool addToLinkedStaves, bool 
                 Chord* c1 = findLinkedChord(cr1, score->staff(staffIdx));
                 Chord* c2 = findLinkedChord(cr2, score->staff(staffIdx + sm));
                 Note* nn1 = c1->findNote(n1->pitch(), n1->unisonIndex());
-                Note* nn2 = c2 ? c2->findNote(n2->pitch(), n2->unisonIndex()) : 0;
+                Note* nn2 = (c2 && n2) ? c2->findNote(n2->pitch(), n2->unisonIndex()) : 0;
 
                 // create tie
                 Tie* ntie = toTie(ne);
