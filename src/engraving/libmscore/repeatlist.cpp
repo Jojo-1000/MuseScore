@@ -786,7 +786,7 @@ void RepeatList::unwind()
 
     // Following variables are used during unwinding, but may be altered when following jumps
     // Therefor they are declared outside of the loop
-    RepeatSegment* rs = nullptr;
+    std::unique_ptr<RepeatSegment> rs;
     int playbackCount;
     Volta const* activeVolta = nullptr;
     std::pair<std::vector<RepeatListElementList>::const_iterator, RepeatListElementList::const_iterator> playUntil
@@ -809,8 +809,8 @@ void RepeatList::unwind()
         continueAt.first = _rlElements.cend();
         forceFinalRepeat = false;
 
-        // This is a giant mess of a potential memory leak
-        rs = new RepeatSegment(playbackCount);
+        // This is a giant mess, but the unique pointer at least prevents memory leaks
+        rs = std::make_unique<RepeatSegment>(playbackCount);
         rs->addMeasure((*repeatListElementIt)->measure);
         ++repeatListElementIt;
 
@@ -821,7 +821,7 @@ void RepeatList::unwind()
             switch ((*repeatListElementIt)->repeatListElementType) {
             case RepeatListElementType::SECTION_BREAK: {
                 if ((rs != nullptr) && (!rs->isEmpty())) {
-                    push_back(rs);
+                    push_back(rs.release());
                 }
             } break;
             case RepeatListElementType::VOLTA_START: {
@@ -830,7 +830,7 @@ void RepeatList::unwind()
                     // Should be skipped, remove our measure from rs
                     rs->popMeasure();
                     if (!rs->isEmpty()) {
-                        push_back(rs);
+                        push_back(rs.release());
                     }
                     // Skip the volta
                     do {
@@ -842,7 +842,7 @@ void RepeatList::unwind()
                     if (possibleNextMeasure == nullptr) {
                         rs = nullptr;                   // end of score, but will still encounter section break, notify it
                     } else {
-                        rs = new RepeatSegment(playbackCount);
+                        rs = std::make_unique<RepeatSegment>(playbackCount);
                         rs->addMeasure(possibleNextMeasure);
                     }
                 }
@@ -853,7 +853,7 @@ void RepeatList::unwind()
             } break;
             case RepeatListElementType::REPEAT_START: {
                 if (rs == nullptr) {               // Sent here by an end-repeat
-                    rs = new RepeatSegment(playbackCount);
+                    rs = std::make_unique<RepeatSegment>(playbackCount);
                     rs->addMeasure((*repeatListElementIt)->measure);
                 } else {
                     int desiredPlaybackCount = (forceFinalRepeat) ? (*repeatListElementIt)->getRepeatCount() : 1;
@@ -861,10 +861,10 @@ void RepeatList::unwind()
                         // Restart a segment as we have a new playbackCount reference
                         rs->popMeasure();
                         if (!rs->isEmpty()) {
-                            push_back(rs);
+                            push_back(rs.release());
                         }
                         playbackCount = desiredPlaybackCount;
-                        rs = new RepeatSegment(playbackCount);
+                        rs = std::make_unique<RepeatSegment>(playbackCount);
                         rs->addMeasure((*repeatListElementIt)->measure);
                     }
                     startRepeatReference = *repeatListElementIt;
@@ -877,7 +877,7 @@ void RepeatList::unwind()
                     ) {
                     // Honor the repeat
                     if ((rs != nullptr) && (!rs->isEmpty())) {
-                        push_back(rs);
+                        push_back(rs.release());
                     }
                     rs = nullptr;
                     do {                 // rewind
@@ -920,9 +920,7 @@ void RepeatList::unwind()
 
                         // Execute
                         if (jumpTo.first != _rlElements.cend()) {
-                            push_back(rs);
-                            rs = nullptr;
-
+                            push_back(rs.release());
                             activeJump = jumpOccurrence.first;
                             performJump(jumpTo.first, jumpTo.second,
                                         activeJump->playRepeats(), &playbackCount, &activeVolta, &startRepeatReference);
@@ -989,7 +987,7 @@ void RepeatList::unwind()
                             }
 
                             // We've arrived at the target marker
-                            rs = new RepeatSegment(playbackCount);
+                            rs = std::make_unique<RepeatSegment>(playbackCount);
                             rs->addMeasure((*repeatListElementIt)->measure);
                         }                         // End of jump execution
                     }
@@ -1001,8 +999,8 @@ void RepeatList::unwind()
                         || ((activeVolta != nullptr) && (playbackCount == activeVolta->lastEnding()))
                         )
                     ) {               // Found final playThrough of this Marker
-                    push_back(rs);
-                    rs = nullptr;
+                    push_back(rs.release());
+
                     playUntil.first = _rlElements.cend();                 // Clear this reference - processed
                     forceFinalRepeat = false;
 
@@ -1018,7 +1016,7 @@ void RepeatList::unwind()
                         }
 
                         // We've arrived at the target marker
-                        rs = new RepeatSegment(playbackCount);
+                        rs = std::make_unique<RepeatSegment>(playbackCount);
                         rs->addMeasure((*repeatListElementIt)->measure);
 
                         continueAt.first = _rlElements.cend();                   // Clear this reference - processed
@@ -1035,13 +1033,13 @@ void RepeatList::unwind()
         // Reached the end of this section
         if (!this->empty()) {
             // Inform the last RepeatSegment that the Section Break pause property should be honored now
-            rs = this->back();
+            RepeatSegment* lastSegment = this->back();
             repeatListElementIt = sectionIt->cend() - 1;
             assert((*repeatListElementIt)->repeatListElementType == RepeatListElementType::SECTION_BREAK);
 
             LayoutBreak const* const layoutBreak = toMeasureBase((*repeatListElementIt)->element)->sectionBreakElement();
             if (layoutBreak != nullptr) {
-                rs->pause = layoutBreak->pause();
+                lastSegment->pause = layoutBreak->pause();
             }
         }
     }
