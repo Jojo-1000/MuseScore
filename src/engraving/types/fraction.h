@@ -236,7 +236,8 @@ public:
         // Prevent divide by zero
         assert(isValid());
         if(!isValid()) {
-            return 0;
+            // Ticks are often used in modulo, so use 1 as fallback instead of 0
+            return 1;
         }
 
         // Constants::division     - ticks per quarter note

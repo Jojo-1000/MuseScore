@@ -767,7 +767,9 @@ void Chord::remove(EngravingItem* e)
         _hook = 0;
         break;
     case ElementType::STEM_SLASH:
-        assert(_stemSlash);
+        IF_ASSERT_FAILED_X(_stemSlash, "Stem slash type is wrong") {
+            break;
+        }
         if (_stemSlash->selected() && score()) {
             score()->deselect(_stemSlash);
         }
@@ -3513,6 +3515,9 @@ EngravingItem* Chord::prevElement()
     IF_ASSERT_FAILED_X(e, "EngravingItem is null (no selection?)") {
         return ChordRest::prevElement();
     }
+    IF_ASSERT_FAILED_X(!_notes.empty(), "Notes in chord are empty") {
+        return ChordRest::prevElement();
+    }
 
     switch (e->type()) {
     case ElementType::NOTE: {
@@ -3524,6 +3529,9 @@ EngravingItem* Chord::prevElement()
             if (i == e) {
                 prevNote = *(&i + 1);
             }
+        }
+        IF_ASSERT_FAILED_X(prevNote, "Selected note is not in chord") {
+            return ChordRest::prevElement();
         }
         EngravingItem* next = prevNote->lastElementBeforeSegment();
         return next;

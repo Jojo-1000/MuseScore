@@ -659,6 +659,10 @@ double Arpeggio::insetDistance(std::vector<Accidental*>& accidentals, double mag
         }
     }
 
+
+    IF_ASSERT_FAILED_X(furthestAccidental, "Furthest accidental is null") {
+        return 0.0;
+    }
     // this cutout means the vertical lines for a ♯, ♭, and ♮ are in the same position
     // if an accidental does not have a cutout (e.g., ♭), this value is 0
     double accidentalCutOutX = symSmuflAnchor(furthestAccidental->symbol(), SmuflAnchorId::cutOutNW).x() * mag_;

@@ -3399,7 +3399,7 @@ static void onFocusedItemChanged(EngravingItem* item)
         dummyAccRoot->setFocusedElement(nullptr);
     }
 
-    if (dummyAccRoot && currAccRoot == dummyAccRoot && dummyAccRoot->registered()) {
+    if (accRoot && dummyAccRoot && currAccRoot == dummyAccRoot && dummyAccRoot->registered()) {
         dummyAccRoot->setFocusedElement(accessible);
 
         if (AccessibleItemPtr focusedElement = accRoot->focusedElement().lock()) {
@@ -4673,7 +4673,8 @@ ChordRest* Score::cmdNextPrevSystem(ChordRest* cr, bool next)
 
     // Case: Go to next system
     if (next) {
-        if ((destinationMeasure = currentSystem->lastMeasure()->nextMeasure())) {
+        destinationMeasure = currentSystem->lastMeasure()->nextMeasure();
+        if (destinationMeasure) {
             // There is a next system present: get it and accommodate for MMRest
             currentSystem = destinationMeasure->system() ? destinationMeasure->system() : destinationMeasure->mmRest1()->system();
             if ((destinationMeasure = currentSystem->firstMeasure())) {
@@ -4700,16 +4701,17 @@ ChordRest* Score::cmdNextPrevSystem(ChordRest* cr, bool next)
     // Case: Go to previous system
     else {
         auto currentSegment = cr->segment();
-        // TODO: Untangle this mess and add null checks
-
         // Only go to previous system's beginning if user is already at the absolute beginning of current system
         // and not in first measure of entire score
         if ((destinationMeasure != firstMeasure() && destinationMeasure != firstMeasureMM())
             && (currentSegment == firstSegment || (currentMeasure->mmRest() && currentMeasure->mmRest()->isFirstInSystem()))) {
-            if (!(destinationMeasure = destinationMeasure->prevMeasure())) {
+            if (!destinationMeasure->prevMeasure()) {
                 if (!(destinationMeasure = destinationMeasure->prevMeasureMM())) {
                     return cr;
                 }
+            }
+            else {
+                destinationMeasure = destinationMeasure->prevMeasure();
             }
             if (!(currentSystem = destinationMeasure->system() ? destinationMeasure->system() : destinationMeasure->mmRest1()->system())) {
                 return cr;

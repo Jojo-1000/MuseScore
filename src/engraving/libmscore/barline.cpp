@@ -395,6 +395,10 @@ static size_t nextVisibleSpannedStaff(const BarLine* bl)
     size_t nstaves = score->nstaves();
     size_t staffIdx = bl->staffIdx();
     Segment* segment = bl->segment();
+
+    IF_ASSERT_FAILED_X(segment, "Segment is null") {
+        return 0;
+    }
     for (size_t i = staffIdx + 1; i < nstaves; ++i) {
         Staff* s = score->staff(i);
         if (s->part()->show()) {
@@ -403,7 +407,7 @@ static size_t nextVisibleSpannedStaff(const BarLine* bl)
                 return i;
             }
             // or if this is an endBarLine and:
-            if (segment && segment->isEndBarLineType()) {
+            if (segment->isEndBarLineType()) {
                 // ...this measure contains a (cutaway) courtesy clef only
                 if (bl->measure()->isCutawayClef(i)) {
                     return i;

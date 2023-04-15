@@ -3166,6 +3166,10 @@ void Score::cmdExplode()
     Measure* startMeasure = startSegment->measure();
     Measure* endMeasure = endSegment ? endSegment->measure() : lastMeasure();
 
+    IF_ASSERT_FAILED_X(startMeasure != nullptr && endMeasure != nullptr, "Start or end measure is null") {
+        return;
+    }
+
     Fraction lTick = endMeasure->endTick();
     bool voice = false;
 

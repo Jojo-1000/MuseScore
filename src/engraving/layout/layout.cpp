@@ -171,6 +171,9 @@ void Layout::doLayoutRange(const LayoutOptions& options, const Fraction& st, con
             if (mb) {
                 mb = mb->findPotentialSectionBreak();
             }
+            IF_ASSERT_FAILED_X(mb, "Section break is null") {
+                return;
+            }
 
             const LayoutBreak* layoutBreak = mb->sectionBreakElement();
             // TODO: also use mb in else clause here?
