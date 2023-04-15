@@ -4662,66 +4662,74 @@ ChordRest* Score::findCRinStaff(const Fraction& tick, staff_idx_t staffIdx) cons
 
 ChordRest* Score::cmdNextPrevSystem(ChordRest* cr, bool next)
 {
-    auto newCR = cr;
-    auto currentMeasure = cr->measure();
-    auto currentSystem = currentMeasure->system() ? currentMeasure->system() : currentMeasure->mmRest1()->system();
+    Measure* currentMeasure = cr->measure();
+    IF_ASSERT_FAILED_X(currentMeasure->system() != nullptr || currentMeasure->mmRest1() != nullptr, "Current measure has no system and no mmrest"){
+        return cr;
+    }
+    System* currentSystem = currentMeasure->system() ? currentMeasure->system() : currentMeasure->mmRest1()->system();
     if (!currentSystem) {
         return cr;
     }
-    auto destinationMeasure = currentSystem->firstMeasure();
-    auto firstSegment = destinationMeasure->first(SegmentType::ChordRest);
+    Measure* destinationMeasure = currentSystem->firstMeasure();
+    IF_ASSERT_FAILED_X(destinationMeasure, "Current system has no first measure"){
+        return cr;
+    }
+    Segment* firstSegment = destinationMeasure->first(SegmentType::ChordRest);
 
     // Case: Go to next system
     if (next) {
-        destinationMeasure = currentSystem->lastMeasure()->nextMeasure();
-        if (destinationMeasure) {
+        Measure* nextSystemMeasure = currentSystem->lastMeasure()->nextMeasure();
+        if (nextSystemMeasure) {
             // There is a next system present: get it and accommodate for MMRest
-            currentSystem = destinationMeasure->system() ? destinationMeasure->system() : destinationMeasure->mmRest1()->system();
-            if ((destinationMeasure = currentSystem->firstMeasure())) {
-                if ((newCR = destinationMeasure->first()->nextChordRest(trackZeroVoice(cr->track()), false))) {
-                    cr = newCR;
-                }
+            IF_ASSERT_FAILED_X(nextSystemMeasure->system() != nullptr || nextSystemMeasure->mmRest1() != nullptr, "Next system measure has no system and no mmrest"){
+                return cr;
             }
+            System* nextSystem = nextSystemMeasure->system() ? nextSystemMeasure->system() : nextSystemMeasure->mmRest1()->system();
+            destinationMeasure = nextSystem->firstMeasure();
         } else if (currentMeasure != lastMeasure()) {
             // There is no next system present: go to last measure of current system
-            if ((destinationMeasure = lastMeasure())) {
-                if ((newCR = destinationMeasure->first()->nextChordRest(trackZeroVoice(cr->track()), false))) {
-                    if (!destinationMeasure->isMMRest()) {
-                        cr = newCR;
-                    }
-                    // Last visual measure is a MMRest: go to very last measure within that MMRest
-                    else if ((destinationMeasure = lastMeasureMM())
-                             && (newCR = destinationMeasure->first()->nextChordRest(trackZeroVoice(cr->track()), false))) {
-                        cr = newCR;
-                    }
-                }
+            destinationMeasure = lastMeasure();
+            if (destinationMeasure && destinationMeasure->isMMRest()) {
+                // Last visual measure is a MMRest: go to very last measure within that MMRest
+                destinationMeasure = lastMeasureMM();
             }
+        } else {
+            // Already at the last measure, do not need to move
+            destinationMeasure = nullptr;
         }
     }
     // Case: Go to previous system
     else {
-        auto currentSegment = cr->segment();
+        Segment* currentSegment = cr->segment();
         // Only go to previous system's beginning if user is already at the absolute beginning of current system
         // and not in first measure of entire score
         if ((destinationMeasure != firstMeasure() && destinationMeasure != firstMeasureMM())
             && (currentSegment == firstSegment || (currentMeasure->mmRest() && currentMeasure->mmRest()->isFirstInSystem()))) {
-            if (!destinationMeasure->prevMeasure()) {
-                if (!(destinationMeasure = destinationMeasure->prevMeasureMM())) {
+            Measure* prevSystemMeasure = destinationMeasure->prevMeasure();
+            if (!prevSystemMeasure) {
+                prevSystemMeasure  = destinationMeasure->prevMeasureMM();
+                if (!prevSystemMeasure) {
                     return cr;
                 }
             }
-            else {
-                destinationMeasure = destinationMeasure->prevMeasure();
-            }
-            if (!(currentSystem = destinationMeasure->system() ? destinationMeasure->system() : destinationMeasure->mmRest1()->system())) {
+            IF_ASSERT_FAILED_X(prevSystemMeasure->system() != nullptr || prevSystemMeasure->mmRest1() != nullptr, "Previous system measure has no system and no mmrest"){
                 return cr;
             }
-            destinationMeasure = currentSystem->firstMeasure();
-        }
-        if (destinationMeasure) {
-            if ((newCR = destinationMeasure->first()->nextChordRest(trackZeroVoice(cr->track()), false))) {
-                cr = newCR;
+            System* previousSystem = prevSystemMeasure->system() ? prevSystemMeasure->system() : prevSystemMeasure->mmRest1()->system();
+            if (!previousSystem) {
+                return cr;
             }
+            destinationMeasure = previousSystem->firstMeasure();
+        }
+    }
+    // Get next chord rest at destination
+    if(destinationMeasure) {
+        IF_ASSERT_FAILED_X(destinationMeasure->first(), "Destination measure has no first segment"){
+            return cr;
+        }
+        ChordRest* newCR = destinationMeasure->first()->nextChordRest(trackZeroVoice(cr->track()), false);
+        if(newCR) {
+            cr = newCR;
         }
     }
     return cr;
