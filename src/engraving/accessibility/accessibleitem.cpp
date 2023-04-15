@@ -191,12 +191,12 @@ QString AccessibleItem::accessibleName() const
     barsAndBeats.remove(u';'); // Too many pauses in speech
 
     QString name = QString("%1%2%3%4%5%6")
-                   .arg(!commandInfo.isEmpty() ? (commandInfo + "; ") : "")
-                   .arg(!staffInfo.isEmpty() ? (staffInfo + "; ") : "")
-                   .arg(m_element->screenReaderInfo().toQString())
-                   .arg(m_element->visible() ? "" : " " + qtrc("engraving", "invisible"))
-                   .arg(!barsAndBeats.isEmpty() ? ("; " + barsAndBeats) : "")
-                   .arg((root && root->isRangeSelection()) ? ("; " + qtrc("engraving", "selected")) : "");
+                   .arg(!commandInfo.isEmpty() ? (commandInfo + "; ") : "",
+                        !staffInfo.isEmpty() ? (staffInfo + "; ") : "",
+                        m_element->screenReaderInfo().toQString(),
+                        m_element->visible() ? "" : " " + qtrc("engraving", "invisible"),
+                        !barsAndBeats.isEmpty() ? ("; " + barsAndBeats) : "",
+                        (root && root->isRangeSelection()) ? ("; " + qtrc("engraving", "selected")) : "");
 
     return readable(name);
 }

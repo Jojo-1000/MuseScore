@@ -209,17 +209,17 @@ QString AccessibleRoot::rangeSelectionInfo()
         Staff* staff2 = score->staff(endStaff);
         if (staff1 && staff2) {
             staffInstrument1 = qtrc("engraving", "Staff %1 (%2)")
-                               .arg(QString::number(startStaff + 1))
-                               .arg(staff1 ? staff1->partName().toQString() : "");
+                               .arg(QString::number(startStaff + 1),
+                                    staff1 ? staff1->partName().toQString() : "");
             staffInstrument2 = qtrc("engraving", "Staff %1 (%2)")
-                               .arg(QString::number(endStaff + 1))
-                               .arg(staff2 ? staff2->partName().toQString() : "");
+                               .arg(QString::number(endStaff + 1),
+                                    staff2 ? staff2->partName().toQString() : "");
         }
     }
 
     return qtrc("engraving", "Range selection starts %1%2 ends %3%4")
-           .arg(startBarBeat)
-           .arg(!staffInstrument1.isEmpty() ? (" " + staffInstrument1) : "")
-           .arg(endBarBeat)
-           .arg(!staffInstrument2.isEmpty() ? (" " + staffInstrument2) : "");
+           .arg(startBarBeat,
+                !staffInstrument1.isEmpty() ? (" " + staffInstrument1) : "",
+                endBarBeat,
+                !staffInstrument2.isEmpty() ? (" " + staffInstrument2) : "");
 }

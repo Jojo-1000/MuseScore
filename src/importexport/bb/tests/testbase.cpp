@@ -108,7 +108,7 @@ bool MTest::compareFilesFromPaths(const QString& f1, const QString& f2)
         //   qPrintable(QString(root + "/" + saveName)));
         QTextStream outputText(stdout);
         outputText << QString(ba);
-        outputText << QString("   <diff -u %1 %2 failed").arg(f2).arg(f1);
+        outputText << QString("   <diff -u %1 %2 failed").arg(f2, f1);
         return false;
     }
     return true;
