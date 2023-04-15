@@ -1883,8 +1883,9 @@ void TextBase::layout1()
         t->layout(this);
         const RectF* r = &t->boundingRect();
 
-        if (r->height() == 0) {
-            r = &_layout[i - i].boundingRect();
+        if (r->height() == 0 && i > 0) {
+            // use previous row if this one is empty???
+            r = &_layout[i - 1].boundingRect();
         }
         y += t->lineSpacing();
         t->setY(y);
