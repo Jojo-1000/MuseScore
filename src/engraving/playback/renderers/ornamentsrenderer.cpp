@@ -276,7 +276,8 @@ void OrnamentsRenderer::doRender(const EngravingItem* item, const ArticulationTy
 void OrnamentsRenderer::convert(const ArticulationType type, const DisclosurePattern& pattern, NominalNoteCtx&& noteCtx,
                                 mpe::PlaybackEventList& result)
 {
-    if (noteCtx.chordCtx.nominalDurationTicks <= pattern.boundaries.lowTempoDurationTicks) {
+    int nominalDurationTicks = noteCtx.chordCtx.nominalDurationTicks;
+    if (nominalDurationTicks <= pattern.boundaries.lowTempoDurationTicks) {
         result.push_back(buildNoteEvent(std::move(noteCtx)));
         return;
     }
@@ -284,7 +285,7 @@ void OrnamentsRenderer::convert(const ArticulationType type, const DisclosurePat
     // convert prefix
     if (!pattern.prefixPitchOffsets.empty()) {
         createEvents(type, noteCtx, 1, pattern.prefixDurationTicks,
-                     noteCtx.chordCtx.nominalDurationTicks, pattern.prefixPitchOffsets, result);
+                     nominalDurationTicks, pattern.prefixPitchOffsets, result);
     }
 
     // convert body
@@ -293,7 +294,7 @@ void OrnamentsRenderer::convert(const ArticulationType type, const DisclosurePat
 
         if (pattern.isAlterationsRepeatAllowed) {
             alterationsCount = alterationsNumberByTempo(noteCtx.chordCtx.beatsPerSecond.val,
-                                                        noteCtx.chordCtx.nominalDurationTicks,
+                                                        nominalDurationTicks,
                                                         pattern);
         }
 
@@ -301,8 +302,8 @@ void OrnamentsRenderer::convert(const ArticulationType type, const DisclosurePat
             result.push_back(buildNoteEvent(std::move(noteCtx)));
         } else {
             createEvents(type, noteCtx, alterationsCount,
-                         noteCtx.chordCtx.nominalDurationTicks - pattern.prefixDurationTicks - pattern.suffixDurationTicks,
-                         noteCtx.chordCtx.nominalDurationTicks,
+                         nominalDurationTicks - pattern.prefixDurationTicks - pattern.suffixDurationTicks,
+                         nominalDurationTicks,
                          pattern.alterationStepPitchOffsets, result);
         }
     }
@@ -311,7 +312,7 @@ void OrnamentsRenderer::convert(const ArticulationType type, const DisclosurePat
     if (!pattern.suffixPitchOffsets.empty()) {
         createEvents(type, noteCtx, 1,
                      pattern.suffixDurationTicks,
-                     noteCtx.chordCtx.nominalDurationTicks,
+                     nominalDurationTicks,
                      pattern.suffixPitchOffsets, result);
     }
 }
