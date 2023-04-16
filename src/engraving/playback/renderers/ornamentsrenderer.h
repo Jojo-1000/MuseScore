@@ -25,11 +25,9 @@
 
 #include "renderbase.h"
 
-namespace Ms {
-class Note;
-}
-
 namespace mu::engraving {
+class Note;
+
 struct DisclosurePattern {
     int prefixDurationTicks = 0;
     std::vector<mpe::pitch_level_t> prefixPitchOffsets;

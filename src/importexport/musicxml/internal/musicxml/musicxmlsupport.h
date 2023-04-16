@@ -31,9 +31,10 @@
 #include "libmscore/mscore.h"
 #include "libmscore/note.h"
 
-class Chord;
 
 namespace mu::engraving {
+class Chord;
+
 //---------------------------------------------------------
 //   NoteList
 //---------------------------------------------------------

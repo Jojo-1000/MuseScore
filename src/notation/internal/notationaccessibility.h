@@ -29,7 +29,7 @@
 #include "async/asyncable.h"
 #include "async/notification.h"
 
-namespace Ms {
+namespace mu::engraving {
 class Score;
 class Selection;
 }

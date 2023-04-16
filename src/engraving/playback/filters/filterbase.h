@@ -27,11 +27,9 @@
 
 #include "playback/renderingcontext.h"
 
-namespace Ms {
-class EngravingItem;
-}
-
 namespace mu::engraving {
+class EngravingItem;
+
 template<class T>
 class FilterBase
 {
