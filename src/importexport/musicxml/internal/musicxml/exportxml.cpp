@@ -3901,8 +3901,8 @@ void ExportMusicXml::rest(Rest* rest, staff_idx_t staff)
     // as no display-step or display-octave should be written for a tablature staff,
 
     if (clef != ClefType::TAB && clef != ClefType::TAB_SERIF && clef != ClefType::TAB4 && clef != ClefType::TAB4_SERIF) {
-        double yOffsSp = rest->offset().y() / rest->spatium();                  // y offset in spatium (negative = up)
-        yOffsSt = -2 * int(yOffsSp > 0.0 ? yOffsSp + 0.5 : yOffsSp - 0.5);     // same rounded to int (positive = up)
+        double yOffsSp = rest->offset().y() / rest->spatium();  // y offset in spatium (negative = up)
+        yOffsSt = -2 * int(std::lround(yOffsSp));               // same rounded to int (positive = up)
 
         po -= 4;        // pitch middle staff line (two lines times two steps lower than top line)
         po += yOffsSt;     // rest "pitch"

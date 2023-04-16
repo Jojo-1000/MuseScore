@@ -515,7 +515,7 @@ void ReverbProcessor::setParameter(int32_t index, float newValue)
         reset();
         break;
     case Params::PreDelayMs: {
-        int smp = int(newValue * 0.001 * m_processor._sampleRate + 0.5);
+        int smp = int(std::lround(newValue * 0.001 * m_processor._sampleRate));
         d->pre_delay.setDelaySamples(smp);
         break;
     }
@@ -549,7 +549,7 @@ bool ReverbProcessor::setFormat(audioch_t audioChannelsCount, double sampleRate,
     d->er_buffer.setSize(2, maximumBlockSize);
     d->late_buffer.setSize(2, maximumBlockSize);
 
-    int max_predelay_smp = int(sampleRate * 0.001 * m_processor._param[Params::PreDelayMs].valueRange.second + 0.5);
+    int max_predelay_smp = int(std::lround(sampleRate * 0.001 * m_processor._param[Params::PreDelayMs].valueRange.second));
     d->pre_delay.allocateForMaxDelaySamples(max_predelay_smp);
     for (int i = 0; i < max_num_delays; ++i) {
         d->ivnd_in[i].configure(i, sampleRate, maximumBlockSize);
@@ -573,7 +573,7 @@ bool ReverbProcessor::setFormat(audioch_t audioChannelsCount, double sampleRate,
     d->er_fir[0].appendImpulse(int(0.0961 * sampleRate), 0.064f);
     d->er_fir[1].appendImpulse(int(0.1100 * sampleRate), 0.064f);
 
-    auto smoothSteps = int(0.02f * m_processor._sampleRate + 0.5f);
+    auto smoothSteps = int(std::lround(0.02f * m_processor._sampleRate));
     d->loCutFilter.setSmoothingSteps(smoothSteps);
     d->hiCutFilter.setSmoothingSteps(smoothSteps);
     d->peakFilter.setSmoothingSteps(smoothSteps);

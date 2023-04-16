@@ -158,7 +158,7 @@ inline bool RealIsNull(float d)
 inline double RealRound(double value, int prec)
 {
     int round = _pow10(prec);
-    return std::floor(value * round + 0.5) / round;
+    return std::round(value * round) / round;
 }
 
 inline double RealRound(float value, int prec)

@@ -70,7 +70,7 @@ static int refTimeToSamples(const REFERENCE_TIME& t, double sampleRate) noexcept
 
 static REFERENCE_TIME samplesToRefTime(int numSamples, double sampleRate) noexcept
 {
-    return (REFERENCE_TIME)((numSamples * 10000.0 * 1000.0 / sampleRate) + 0.5);
+    return (REFERENCE_TIME)std::llround(numSamples * 10000.0 * 1000.0 / sampleRate);
 }
 
 void copyWavFormat(WAVEFORMATEXTENSIBLE& dest, const WAVEFORMATEX* src) noexcept

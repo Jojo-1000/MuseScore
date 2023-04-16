@@ -46,7 +46,7 @@ public:
         m_filter.setFormat(maxBlockSize, int(samplerate * 0.03));
         m_filter.clearImpulses();
         for (int i = 0; i < 15; ++i) {
-            m_filter.appendImpulse(int(ivn15_ms[sequence_number][i] * 0.001f * samplerate + 0.5f),
+            m_filter.appendImpulse(int(std::lround(ivn15_ms[sequence_number][i] * 0.001f * samplerate)),
                                    ivn15_gn[sequence_number][i]);
         }
     }

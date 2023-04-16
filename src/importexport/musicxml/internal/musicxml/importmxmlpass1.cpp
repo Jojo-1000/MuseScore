@@ -1647,12 +1647,12 @@ void MusicXMLParserPass1::pageLayout(PageFormat& pf, const qreal conversion)
             double val = _e.readElementText().toDouble();
             size.rheight() = val * conversion;
             // set pageHeight and pageWidth for use by doCredits()
-            _pageSize.setHeight(static_cast<int>(val + 0.5));
+            _pageSize.setHeight(static_cast<int>(std::lround(val)));
         } else if (_e.name() == "page-width") {
             double val = _e.readElementText().toDouble();
             size.rwidth() = val * conversion;
             // set pageHeight and pageWidth for use by doCredits()
-            _pageSize.setWidth(static_cast<int>(val + 0.5));
+            _pageSize.setWidth(static_cast<int>(std::lround(val)));
         } else {
             skipLogCurrElem();
         }

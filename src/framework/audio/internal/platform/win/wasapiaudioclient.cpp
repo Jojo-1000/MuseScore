@@ -260,7 +260,7 @@ UINT32 WasapiAudioClient::getBufferFramesPerPeriod() noexcept
     }
 
     double devicePeriodInSeconds = defaultDevicePeriod / (10000.0 * 1000.0);
-    return static_cast<UINT32>(m_mixFormat->nSamplesPerSec * devicePeriodInSeconds + 0.5);
+    return static_cast<UINT32>(std::lround(m_mixFormat->nSamplesPerSec * devicePeriodInSeconds));
 }
 
 //

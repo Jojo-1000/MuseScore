@@ -20,6 +20,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <cmath>
+
 #include "wasapiaudiodriver.h"
 
 #include "log.h"
@@ -40,7 +42,7 @@ inline int refTimeToSamples(const REFERENCE_TIME& t, double sampleRate) noexcept
 
 inline REFERENCE_TIME samplesToRefTime(int numSamples, double sampleRate) noexcept
 {
-    return (REFERENCE_TIME)((numSamples * 10000.0 * 1000.0 / sampleRate) + 0.5);
+    return (REFERENCE_TIME)std::llround(numSamples * 10000.0 * 1000.0 / sampleRate);
 }
 
 struct WasapiData {

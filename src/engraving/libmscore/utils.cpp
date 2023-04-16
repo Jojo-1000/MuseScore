@@ -478,7 +478,7 @@ int quantizeLen(int len, int raster)
     if (raster == 0) {
         return len;
     }
-    return int(((float)len / raster) + 0.5) * raster;   //round to the closest multiple of raster
+    return int(std::lround((float)len / raster)) * raster;   //round to the closest multiple of raster
 }
 
 static const char16_t* vall[] = {
