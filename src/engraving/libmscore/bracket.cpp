@@ -179,30 +179,30 @@ void Bracket::layout()
             _braceSymbol = SymId::noSym;
             double w = score()->styleMM(Sid::akkoladeWidth);
 
-#define XM(a) (a + 700) * w / 700
-#define YM(a) (a + 7100) * h2 / 7100
+            auto xm = [w](auto a) { return (a + 700) * w / 700; };
+            auto ym = [h2=this->h2](auto a) { return (a + 7100) * h2 / 7100; };
 
-            path.moveTo(XM(-8), YM(-2048));
-            path.cubicTo(XM(-8), YM(-3192), XM(-360), YM(-4304), XM(-360), YM(-5400));                 // c 0
-            path.cubicTo(XM(-360), YM(-5952), XM(-264), YM(-6488), XM(32), YM(-6968));                 // c 1
-            path.cubicTo(XM(36), YM(-6974), XM(38), YM(-6984), XM(38), YM(-6990));                     // c 0
-            path.cubicTo(XM(38), YM(-7008), XM(16), YM(-7024), XM(0), YM(-7024));                      // c 0
-            path.cubicTo(XM(-8), YM(-7024), XM(-22), YM(-7022), XM(-32), YM(-7008));                   // c 1
-            path.cubicTo(XM(-416), YM(-6392), XM(-544), YM(-5680), XM(-544), YM(-4960));               // c 0
-            path.cubicTo(XM(-544), YM(-3800), XM(-168), YM(-2680), XM(-168), YM(-1568));               // c 0
-            path.cubicTo(XM(-168), YM(-1016), XM(-264), YM(-496), XM(-560), YM(-16));                  // c 1
-            path.lineTo(XM(-560), YM(0));                    //  l 1
-            path.lineTo(XM(-560), YM(16));                   //  l 1
-            path.cubicTo(XM(-264), YM(496), XM(-168), YM(1016), XM(-168), YM(1568));                   // c 0
-            path.cubicTo(XM(-168), YM(2680), XM(-544), YM(3800), XM(-544), YM(4960));                  // c 0
-            path.cubicTo(XM(-544), YM(5680), XM(-416), YM(6392), XM(-32), YM(7008));                   // c 1
-            path.cubicTo(XM(-22), YM(7022), XM(-8), YM(7024), XM(0), YM(7024));                        // c 0
-            path.cubicTo(XM(16), YM(7024), XM(38), YM(7008), XM(38), YM(6990));                        // c 0
-            path.cubicTo(XM(38), YM(6984), XM(36), YM(6974), XM(32), YM(6968));                        // c 1
-            path.cubicTo(XM(-264), YM(6488), XM(-360), YM(5952), XM(-360), YM(5400));                  // c 0
-            path.cubicTo(XM(-360), YM(4304), XM(-8), YM(3192), XM(-8), YM(2048));                      // c 0
-            path.cubicTo(XM(-8), YM(1320), XM(-136), YM(624), XM(-512), YM(0));                        // c 1
-            path.cubicTo(XM(-136), YM(-624), XM(-8), YM(-1320), XM(-8), YM(-2048));                    // c 0*/
+            path.moveTo(xm(-8), ym(-2048));
+            path.cubicTo(xm(-8), ym(-3192), xm(-360), ym(-4304), xm(-360), ym(-5400));                 // c 0
+            path.cubicTo(xm(-360), ym(-5952), xm(-264), ym(-6488), xm(32), ym(-6968));                 // c 1
+            path.cubicTo(xm(36), ym(-6974), xm(38), ym(-6984), xm(38), ym(-6990));                     // c 0
+            path.cubicTo(xm(38), ym(-7008), xm(16), ym(-7024), xm(0), ym(-7024));                      // c 0
+            path.cubicTo(xm(-8), ym(-7024), xm(-22), ym(-7022), xm(-32), ym(-7008));                   // c 1
+            path.cubicTo(xm(-416), ym(-6392), xm(-544), ym(-5680), xm(-544), ym(-4960));               // c 0
+            path.cubicTo(xm(-544), ym(-3800), xm(-168), ym(-2680), xm(-168), ym(-1568));               // c 0
+            path.cubicTo(xm(-168), ym(-1016), xm(-264), ym(-496), xm(-560), ym(-16));                  // c 1
+            path.lineTo(xm(-560), ym(0));                    //  l 1
+            path.lineTo(xm(-560), ym(16));                   //  l 1
+            path.cubicTo(xm(-264), ym(496), xm(-168), ym(1016), xm(-168), ym(1568));                   // c 0
+            path.cubicTo(xm(-168), ym(2680), xm(-544), ym(3800), xm(-544), ym(4960));                  // c 0
+            path.cubicTo(xm(-544), ym(5680), xm(-416), ym(6392), xm(-32), ym(7008));                   // c 1
+            path.cubicTo(xm(-22), ym(7022), xm(-8), ym(7024), xm(0), ym(7024));                        // c 0
+            path.cubicTo(xm(16), ym(7024), xm(38), ym(7008), xm(38), ym(6990));                        // c 0
+            path.cubicTo(xm(38), ym(6984), xm(36), ym(6974), xm(32), ym(6968));                        // c 1
+            path.cubicTo(xm(-264), ym(6488), xm(-360), ym(5952), xm(-360), ym(5400));                  // c 0
+            path.cubicTo(xm(-360), ym(4304), xm(-8), ym(3192), xm(-8), ym(2048));                      // c 0
+            path.cubicTo(xm(-8), ym(1320), xm(-136), ym(624), xm(-512), ym(0));                        // c 1
+            path.cubicTo(xm(-136), ym(-624), xm(-8), ym(-1320), xm(-8), ym(-2048));                    // c 0*/
             setbbox(path.boundingRect());
             _shape.add(bbox());
         } else {

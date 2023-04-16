@@ -203,7 +203,10 @@ static bool beamNoContinue(BeamMode mode)
     return mode == BeamMode::END || mode == BeamMode::NONE || mode == BeamMode::INVALID;
 }
 
-#define beamModeMid(a) (a == BeamMode::MID || a == BeamMode::BEGIN32 || a == BeamMode::BEGIN64)
+static bool beamModeMid(BeamMode a)
+{
+    return (a == BeamMode::MID || a == BeamMode::BEGIN32 || a == BeamMode::BEGIN64);
+}
 
 //---------------------------------------------------------
 //   beamGraceNotes

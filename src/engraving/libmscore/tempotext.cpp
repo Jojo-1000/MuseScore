@@ -41,8 +41,8 @@ using namespace mu;
 using namespace mu::engraving;
 
 namespace mu::engraving {
-#define MIN_TEMPO 5.0 / 60
-#define MAX_TEMPO 999.0 / 60
+#define MIN_TEMPO (5.0 / 60)
+#define MAX_TEMPO (999.0 / 60)
 
 //TODO: textChanged() needs to be called during/after editing
 

@@ -27,7 +27,7 @@
 #include <set>
 
 #ifndef UNUSED
-#define UNUSED(x) (void)x;
+#define UNUSED(x) (void)(x);
 #endif
 
 namespace mu::midi {
