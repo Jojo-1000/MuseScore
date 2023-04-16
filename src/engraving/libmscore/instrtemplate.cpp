@@ -244,6 +244,15 @@ InstrumentTemplate::InstrumentTemplate(const InstrumentTemplate& t)
 
 void InstrumentTemplate::init(const InstrumentTemplate& t)
 {
+    if(this == &t) {
+        // Would wrongly delete drumset
+        return;
+    }
+    if(drumset != nullptr) {
+        // Prevent memory leak of drumset
+        delete drumset;
+        drumset = nullptr;
+    }
     id = t.id;
     trackName = t.trackName;
     longNames = t.longNames;
@@ -289,6 +298,10 @@ InstrumentTemplate::~InstrumentTemplate()
 
 InstrumentTemplate& InstrumentTemplate::operator=(const InstrumentTemplate& templ)
 {
+    // Handle self assignment
+    if(this == &templ) {
+        return *this;
+    }
     init(templ);
     return *this;
 }

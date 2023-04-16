@@ -337,7 +337,7 @@ public:
     String recognizeId() const;
     int recognizeMidiProgram() const;
 
-    void operator=(const Instrument&);
+    Instrument& operator=(const Instrument&);
     bool operator==(const Instrument&) const;
     bool operator!=(const Instrument&) const;
 

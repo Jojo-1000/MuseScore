@@ -185,8 +185,14 @@ Instrument::Instrument(const Instrument& i)
     _trait = i._trait;
 }
 
-void Instrument::operator=(const Instrument& i)
+Instrument& Instrument::operator=(const Instrument& i)
 {
+    // Handle self assignment
+    if(this == &i)
+    {
+        return *this;
+    }
+
     DeleteAll(_channel);
     _channel.clear();
     delete _drumset;
@@ -214,6 +220,8 @@ void Instrument::operator=(const Instrument& i)
     }
     _clefType     = i._clefType;
     _trait = i._trait;
+
+    return *this;
 }
 
 //---------------------------------------------------------
