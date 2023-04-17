@@ -64,11 +64,11 @@ public:
     // IAudioSource
     void setSampleRate(unsigned int sampleRate) override;
     unsigned int audioChannelsCount() const override;
-    samples_t process(float* outBuffer, samples_t samplesPerChannel) override;
+    samples_t process(float* outBuffer, size_t bufferSize, samples_t samplesPerChannel) override;
     void setIsActive(bool arg) override;
 
 private:
-    void mixOutputFromChannel(float* outBuffer, float* inBuffer, unsigned int samplesCount);
+    void mixOutputFromChannel(float* outBuffer, size_t outBufferSize, float* inBuffer, unsigned int samplesCount);
     void completeOutput(float* buffer, samples_t samplesPerChannel);
     void notifyAboutAudioSignalChanges(const audioch_t audioChannelNumber, const float linearRms) const;
 

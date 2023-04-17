@@ -97,7 +97,7 @@ async::Channel<unsigned int> MuseSamplerWrapper::audioChannelsCountChanged() con
     return m_audioChannelsCountChanged;
 }
 
-samples_t MuseSamplerWrapper::process(float* buffer, audio::samples_t samplesPerChannel)
+samples_t MuseSamplerWrapper::process(float* buffer, size_t bufferSize, audio::samples_t samplesPerChannel)
 {
     if (!m_samplerLib || !m_sampler || !m_track) {
         return 0;
@@ -121,7 +121,7 @@ samples_t MuseSamplerWrapper::process(float* buffer, audio::samples_t samplesPer
             return 0;
         }
     }
-    extractOutputSamples(samplesPerChannel, buffer);
+    extractOutputSamples(samplesPerChannel, buffer, bufferSize);
 
     if (isActive()) {
         m_currentPosition += samplesPerChannel;
@@ -311,8 +311,11 @@ void MuseSamplerWrapper::setCurrentPosition(const audio::samples_t samples)
     LOGD() << "Seek a new playback position, newPosition: " << m_currentPosition;
 }
 
-void MuseSamplerWrapper::extractOutputSamples(audio::samples_t samples, float* output)
+void MuseSamplerWrapper::extractOutputSamples(audio::samples_t samples, float* output, size_t bufferSize)
 {
+    IF_ASSERT_FAILED(bufferSize >= samples * m_bus._num_channels) {
+        return;
+    }
     for (audio::samples_t sampleIndex = 0; sampleIndex < samples; ++sampleIndex) {
         for (audio::audioch_t audioChannelIndex = 0; audioChannelIndex < m_bus._num_channels; ++audioChannelIndex) {
             float sample = m_bus._channels[audioChannelIndex][sampleIndex];

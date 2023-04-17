@@ -134,7 +134,7 @@ unsigned int Mixer::audioChannelsCount() const
     return m_audioChannelsCount;
 }
 
-samples_t Mixer::process(float* outBuffer, samples_t samplesPerChannel)
+samples_t Mixer::process(float* outBuffer, size_t bufferSize, samples_t samplesPerChannel)
 {
     ONLY_AUDIO_WORKER_THREAD;
 
@@ -143,6 +143,10 @@ samples_t Mixer::process(float* outBuffer, samples_t samplesPerChannel)
     }
 
     size_t outBufferSize = samplesPerChannel * m_audioChannelsCount;
+    IF_ASSERT_FAILED(outBufferSize <= bufferSize) {
+        return 0;
+    }
+
     std::fill(outBuffer, outBuffer + outBufferSize, 0.f);
 
     if (m_writeCacheBuff.size() != outBufferSize) {
@@ -163,7 +167,7 @@ samples_t Mixer::process(float* outBuffer, samples_t samplesPerChannel)
             buffer = silent_buffer;
 
             if (channel) {
-                channel->process(buffer.data(), samplesPerChannel);
+                channel->process(buffer.data(), outBufferSize, samplesPerChannel);
             }
 
             return buffer;
@@ -173,7 +177,7 @@ samples_t Mixer::process(float* outBuffer, samples_t samplesPerChannel)
     }
 
     for (size_t i = 0; i < futureList.size(); ++i) {
-        mixOutputFromChannel(outBuffer, futureList[i].get().data(), samplesPerChannel);
+        mixOutputFromChannel(outBuffer, bufferSize, futureList[i].get().data(), samplesPerChannel);
 
         masterChannelSampleCount = std::max(samplesPerChannel, masterChannelSampleCount);
     }
@@ -189,7 +193,7 @@ samples_t Mixer::process(float* outBuffer, samples_t samplesPerChannel)
 
     for (IFxProcessorPtr& fxProcessor : m_masterFxProcessors) {
         if (fxProcessor->active()) {
-            fxProcessor->process(outBuffer, samplesPerChannel);
+            fxProcessor->process(outBuffer, bufferSize, samplesPerChannel);
         }
     }
 
@@ -291,9 +295,12 @@ async::Channel<audioch_t, AudioSignalVal> Mixer::masterAudioSignalChanges() cons
     return m_audioSignalNotifier.audioSignalChanges;
 }
 
-void Mixer::mixOutputFromChannel(float* outBuffer, float* inBuffer, unsigned int samplesCount)
+void Mixer::mixOutputFromChannel(float* outBuffer, size_t outBufferSize, float* inBuffer, unsigned int samplesCount)
 {
     IF_ASSERT_FAILED(outBuffer && inBuffer) {
+        return;
+    }
+    IF_ASSERT_FAILED(outBufferSize >= m_audioChannelsCount * samplesCount) {
         return;
     }
 
