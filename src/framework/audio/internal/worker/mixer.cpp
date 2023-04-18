@@ -174,7 +174,7 @@ samples_t Mixer::process(float* outBuffer, size_t bufferSize, samples_t samplesP
             buffer = silent_buffer;
 
             if (channel) {
-                channel->process(buffer.data(), outBufferSize, samplesPerChannel);
+                channel->process(buffer.data(), buffer.size(), samplesPerChannel);
             }
 
             return buffer;
