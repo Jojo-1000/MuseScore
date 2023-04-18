@@ -142,7 +142,7 @@ samples_t Mixer::process(float* outBuffer, size_t bufferSize, samples_t samplesP
         clock->forward((samplesPerChannel * 1000000) / m_sampleRate);
     }
 
-    size_t outBufferSize = samplesPerChannel * m_audioChannelsCount;
+    const size_t outBufferSize = samplesPerChannel * m_audioChannelsCount;
     IF_ASSERT_FAILED(outBufferSize <= bufferSize) {
         return 0;
     }
@@ -155,15 +155,18 @@ samples_t Mixer::process(float* outBuffer, size_t bufferSize, samples_t samplesP
 
     samples_t masterChannelSampleCount = 0;
 
-    std::vector<std::future<std::vector<float> > > futureList;
+    std::vector<std::pair<std::future<std::vector<float> >, audioch_t> > futureList;
 
     for (const auto& pair : m_trackChannels) {
         MixerChannelPtr channel = pair.second;
+        const audioch_t audioChannels = channel->audioChannelsCount();
         std::future<std::vector<float> > future = TaskScheduler::instance()->submit([outBufferSize, samplesPerChannel,
-                                                                                     channel]() -> std::vector<float> {
-            thread_local std::vector<float> buffer(outBufferSize, 0.f);
-            thread_local std::vector<float> silent_buffer(outBufferSize, 0.f);
+                                                                                     channel, audioChannels]() -> std::vector<float> {
+            // Buffers are kept for each thread instance, but potentially need to be resized if number of samples change
+            thread_local std::vector<float> buffer;
+            thread_local std::vector<float> silent_buffer;
 
+            silent_buffer.resize(samplesPerChannel * audioChannels, 0.f);
             buffer = silent_buffer;
 
             if (channel) {
@@ -173,11 +176,11 @@ samples_t Mixer::process(float* outBuffer, size_t bufferSize, samples_t samplesP
             return buffer;
         });
 
-        futureList.emplace_back(std::move(future));
+        futureList.emplace_back(std::move(future), audioChannels);
     }
 
     for (size_t i = 0; i < futureList.size(); ++i) {
-        mixOutputFromChannel(outBuffer, bufferSize, futureList[i].get().data(), samplesPerChannel);
+        mixOutputFromChannel(outBuffer, bufferSize, futureList[i].first.get().data(), samplesPerChannel, futureList[i].second);
 
         masterChannelSampleCount = std::max(samplesPerChannel, masterChannelSampleCount);
     }
@@ -295,7 +298,8 @@ async::Channel<audioch_t, AudioSignalVal> Mixer::masterAudioSignalChanges() cons
     return m_audioSignalNotifier.audioSignalChanges;
 }
 
-void Mixer::mixOutputFromChannel(float* outBuffer, size_t outBufferSize, float* inBuffer, unsigned int samplesCount)
+void Mixer::mixOutputFromChannel(float* outBuffer, size_t outBufferSize, float* inBuffer, unsigned int samplesCount,
+                                 audioch_t inChannels)
 {
     IF_ASSERT_FAILED(outBuffer && inBuffer) {
         return;
@@ -308,11 +312,14 @@ void Mixer::mixOutputFromChannel(float* outBuffer, size_t outBufferSize, float* 
         return;
     }
 
-    for (audioch_t audioChNum = 0; audioChNum < m_audioChannelsCount; ++audioChNum) {
-        for (samples_t s = 0; s < samplesCount; ++s) {
-            int idx = s * m_audioChannelsCount + audioChNum;
+    audioch_t minChannels = std::min(inChannels, m_audioChannelsCount);
+    for (samples_t s = 0; s < samplesCount; ++s) {
+        // TODO: Mix stereo -> mono or stereo -> surround
+        for (audioch_t audioChNum = 0; audioChNum < minChannels; ++audioChNum) {
+            int outIdx = s * m_audioChannelsCount + audioChNum;
+            int inIdx = s * inChannels + audioChNum;
 
-            outBuffer[idx] += inBuffer[idx];
+            outBuffer[outIdx] += inBuffer[inIdx];
         }
     }
 }

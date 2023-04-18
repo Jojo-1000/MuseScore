@@ -45,7 +45,7 @@ public:
     void onDestroy() override;
 
 private:
-    void setupAudioDriver(const framework::IApplication::RunMode& mode);
+    IAudioDriver::Spec setupAudioDriver(const framework::IApplication::RunMode& mode);
     void setupAudioWorker(const IAudioDriver::Spec& activeSpec);
 };
 }
