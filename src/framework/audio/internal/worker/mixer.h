@@ -68,9 +68,9 @@ public:
     void setIsActive(bool arg) override;
 
 private:
-    void mixOutputFromChannel(float* outBuffer, size_t outBufferSize, float* inBuffer, unsigned int samplesCount,
+    void mixOutputFromChannel(float* outBuffer, size_t outBufferSize, audioch_t outChannels, float* inBuffer, unsigned int samplesCount,
                               audioch_t inChannels);
-    void completeOutput(float* buffer, samples_t samplesPerChannel);
+    void completeOutput(float* buffer, samples_t samplesPerChannel, audioch_t channels);
     void notifyAboutAudioSignalChanges(const audioch_t audioChannelNumber, const float linearRms) const;
 
     std::vector<float> m_writeCacheBuff;
