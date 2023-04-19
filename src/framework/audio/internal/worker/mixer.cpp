@@ -25,6 +25,7 @@
 #include "log.h"
 
 #include <limits>
+#include <algorithm>
 
 #include "concurrency/taskscheduler.h"
 
@@ -149,22 +150,15 @@ samples_t Mixer::process(float* outBuffer, size_t bufferSize, samples_t samplesP
 
     std::fill(outBuffer, outBuffer + outBufferSize, 0.f);
 
-    // Use 2 channels in between because fx assumes that
-    const audioch_t intermediateChannels = 2;
-    const size_t writeCacheSize = samplesPerChannel * intermediateChannels;
-    if (m_writeCacheBuff.size() != writeCacheSize) {
-        m_writeCacheBuff.resize(outBufferSize, 0.f);
-    }
-    std::fill(m_writeCacheBuff.begin(), m_writeCacheBuff.end(), 0.f);
-
     samples_t masterChannelSampleCount = 0;
 
+    // Schedule channel processing
     std::vector<std::pair<std::future<std::vector<float> >, audioch_t> > futureList;
 
     for (const auto& pair : m_trackChannels) {
         MixerChannelPtr channel = pair.second;
         const audioch_t audioChannels = channel->audioChannelsCount();
-        std::future<std::vector<float> > future = TaskScheduler::instance()->submit([outBufferSize, samplesPerChannel,
+        std::future<std::vector<float> > future = TaskScheduler::instance()->submit([samplesPerChannel,
                                                                                      channel, audioChannels]() -> std::vector<float> {
             // Buffers are kept for each thread instance, but potentially need to be resized if number of samples change
             thread_local std::vector<float> buffer;
@@ -183,8 +177,26 @@ samples_t Mixer::process(float* outBuffer, size_t bufferSize, samples_t samplesP
         futureList.emplace_back(std::move(future), audioChannels);
     }
 
+    // Use 2 channels in between because fx assumes that
+    const audioch_t intermediateChannelCount = 2;
+    const size_t intermediateSize = samplesPerChannel * intermediateChannelCount;
+    float* intermediateBuffer = outBuffer;
+
+    if (m_audioChannelsCount != intermediateChannelCount) {
+        // Use intermediate buffer for two channels
+        if (m_writeCacheBuff.size() != intermediateSize) {
+            m_writeCacheBuff.resize(intermediateSize, 0.f);
+        }
+        std::fill(m_writeCacheBuff.begin(), m_writeCacheBuff.end(), 0.f);
+        intermediateBuffer = m_writeCacheBuff.data();
+    } else {
+        intermediateBuffer = outBuffer;
+    }
+
     for (size_t i = 0; i < futureList.size(); ++i) {
-        mixOutputFromChannel(m_writeCacheBuff.data(), writeCacheSize, intermediateChannels, futureList[i].first.get().data(), samplesPerChannel, futureList[i].second);
+        mixOutputFromChannel(intermediateBuffer, intermediateSize, intermediateChannelCount,
+                             futureList[i].first.get().data(), samplesPerChannel,
+                             futureList[i].second);
 
         masterChannelSampleCount = std::max(samplesPerChannel, masterChannelSampleCount);
     }
@@ -196,22 +208,34 @@ samples_t Mixer::process(float* outBuffer, size_t bufferSize, samples_t samplesP
         return 0;
     }
 
-    completeOutput(m_writeCacheBuff.data(), samplesPerChannel, intermediateChannels);
+    completeOutput(intermediateBuffer, samplesPerChannel, intermediateChannelCount);
 
     for (IFxProcessorPtr& fxProcessor : m_masterFxProcessors) {
         if (fxProcessor->active()) {
-            fxProcessor->process(m_writeCacheBuff.data(), writeCacheSize, samplesPerChannel);
+            fxProcessor->process(intermediateBuffer, intermediateSize, samplesPerChannel);
         }
     }
 
-    audioch_t minChannels = std::min(intermediateChannels, m_audioChannelsCount);
-    for (samples_t s = 0; s < samplesPerChannel; ++s) {
-        // TODO: Mix stereo -> mono or stereo -> surround
-        for (audioch_t audioChNum = 0; audioChNum < minChannels; ++audioChNum) {
-            int outIdx = s * m_audioChannelsCount + audioChNum;
-            int inIdx = s * intermediateChannels + audioChNum;
+    // Convert from intermediate buffer to output buffer if necessary
+    if (m_audioChannelsCount == 1) {
+        // Average for mono
+        const float factor = 1.f / intermediateChannelCount;
+        for (samples_t s = 0; s < samplesPerChannel; ++s) {
+            const float* intermediateBegin = intermediateBuffer + s * intermediateChannelCount;
+            const float* intermediateEnd = intermediateBegin + intermediateChannelCount;
+            // Calculate mean over intermediate channels
+            outBuffer[s] = factor * std::accumulate(intermediateBegin, intermediateEnd, 0.f);
+        }
+    } else if (m_audioChannelsCount != intermediateChannelCount) {
+        // Fill the first channels of output (front left and front right for surround)
+        audioch_t minChannels = std::min(intermediateChannelCount, m_audioChannelsCount);
+        for (samples_t s = 0; s < samplesPerChannel; ++s) {
+            for (audioch_t audioChNum = 0; audioChNum < minChannels; ++audioChNum) {
+                int outIdx = s * m_audioChannelsCount + audioChNum;
+                int inIdx = s * intermediateChannelCount + audioChNum;
 
-            outBuffer[outIdx] += m_writeCacheBuff[inIdx];
+                outBuffer[outIdx] = intermediateBuffer[inIdx];
+            }
         }
     }
 
