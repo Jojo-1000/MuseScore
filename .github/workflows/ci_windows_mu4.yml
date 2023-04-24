@@ -30,10 +30,10 @@ jobs:
   build_mu4_x64:
     runs-on: windows-2022
     steps:
-    - name: Cancel Previous Runs
-      uses: styfle/cancel-workflow-action@0.11.0
-      with:
-        access_token: ${{ github.token }}
+    # - name: Cancel Previous Runs
+    #   uses: styfle/cancel-workflow-action@0.11.0
+    #   with:
+    #     access_token: ${{ github.token }}
     - name: Clone repository (default)
       uses: actions/checkout@v3
       if: ${{ github.event_name != 'schedule' || github.event.schedule == '0 3 */1 */1 *' }}
