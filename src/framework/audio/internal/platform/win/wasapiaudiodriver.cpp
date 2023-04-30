@@ -67,6 +67,7 @@ WasapiAudioDriver::WasapiAudioDriver()
     m_devicesListener->defaultDeviceChanged().onNotify(this, [this]() {
         if (m_deviceId == DEFAULT_DEVICE_ID) {
             reopen();
+            m_outputDeviceChanged.notify();
         }
     });
 }

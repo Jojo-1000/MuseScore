@@ -25,7 +25,7 @@
 #include "log.h"
 
 using namespace winrt;
-using namespace winrt::Windows::Foundation;
+namespace foundation = winrt::Windows::Foundation;
 using namespace winrt::Windows::Media::Devices;
 using namespace winrt::Windows::Devices::Enumeration;
 
@@ -103,7 +103,7 @@ DeviceInformationCollection WasapiAudioClient::availableDevices() const
     // Get the string identifier of the audio renderer
     hstring AudioSelector = MediaDevice::GetAudioRenderSelector();
 
-    IAsyncOperation<DeviceInformationCollection> deviceRequest
+    foundation::IAsyncOperation<DeviceInformationCollection> deviceRequest
         = DeviceInformation::FindAllAsync(AudioSelector, {});
 
     DeviceInformationCollection deviceInfoCollection = nullptr;
@@ -162,9 +162,10 @@ static void logWAVEFORMATEXTENSIBLE(WAVEFORMATEXTENSIBLE* format)
     }
     LOGI() << "Channel mask: " << format->dwChannelMask;
 
-    // LOGI() << "SubFormat GUID: " << format->SubFormat.Data1 << "." <<
-    // format->SubFormat.Data2 << "." << format->SubFormat.Data3 << "." <<
-    // format->SubFormat.Data4;
+    PWSTR subFormatString;
+    StringFromIID(format->SubFormat, &subFormatString);
+
+    LOGI() << "SubFormat GUID: " << subFormatString;
 }
 
 //
