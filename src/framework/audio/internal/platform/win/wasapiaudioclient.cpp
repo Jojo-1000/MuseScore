@@ -22,22 +22,39 @@
 
 #include "wasapiaudioclient.h"
 
+#include "defer.h"
 #include "log.h"
 
+using namespace mu;
 using namespace winrt;
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Media::Devices;
 using namespace winrt::Windows::Devices::Enumeration;
 
+#define EEEE_IMPL(c) \
+    auto funcname________ = FUNCNAME(FUNC_INFO); \
+    LOGI() << "enter " << c << " " << funcname________; \
+    DEFER { \
+        LOGI() << "survived " << c << " " << funcname________; \
+    };
+
+#define EEEE_EMPTY
+
+#define EEEEE EEEE_IMPL("")
+#define EEEE_TRY EEEE_IMPL("try")
+#define EEEE_CATCH EEEE_IMPL("catch")
+
 WasapiAudioClient::WasapiAudioClient(HANDLE clientStartedEvent, HANDLE clientFailedToStartEvent, HANDLE clientStoppedEvent)
     : m_clientStartedEvent(clientStartedEvent), m_clientFailedToStartEvent(clientFailedToStartEvent), m_clientStoppedEvent(
         clientStoppedEvent)
 {
+    EEEEE;
     check_hresult(MFStartup(MF_VERSION, MFSTARTUP_LITE));
 }
 
 WasapiAudioClient::~WasapiAudioClient()
 {
+    EEEEE;
     MFShutdown();
 }
 
@@ -100,6 +117,8 @@ unsigned int WasapiAudioClient::channelCount() const
 
 DeviceInformationCollection WasapiAudioClient::availableDevices() const
 {
+    EEEEE;
+
     // Get the string identifier of the audio renderer
     hstring AudioSelector = MediaDevice::GetAudioRenderSelector();
 
@@ -109,9 +128,13 @@ DeviceInformationCollection WasapiAudioClient::availableDevices() const
     DeviceInformationCollection deviceInfoCollection = nullptr;
 
     try {
+        EEEE_TRY;
         deviceInfoCollection = deviceRequest.get();
     } catch (...) {
-        LOGE() << to_string(hresult_error(to_hresult()).message());
+        EEEE_CATCH;
+        auto e = to_hresult();
+        LOGI() << "survived to_hresult";
+        LOGE() << to_string(hresult_error(e).message());
     }
 
     return deviceInfoCollection;
@@ -119,12 +142,15 @@ DeviceInformationCollection WasapiAudioClient::availableDevices() const
 
 hstring WasapiAudioClient::defaultDeviceId() const
 {
+    EEEEE;
     return MediaDevice::GetDefaultAudioRenderId(AudioDeviceRole::Default);
 }
 
 void WasapiAudioClient::asyncInitializeAudioDevice(const hstring& deviceId, bool useClosestSupportedFormat) noexcept
 {
+    LOGI() << "enter";
     try {
+        EEEE_TRY;
         // This call can be made safely from a background thread because we are asking for the IAudioClient3
         // interface of an audio device. Async operation will call back to
         // IActivateAudioInterfaceCompletionHandler::ActivateCompleted, which must be an agile interface implementation
@@ -134,10 +160,21 @@ void WasapiAudioClient::asyncInitializeAudioDevice(const hstring& deviceId, bool
         m_deviceState = DeviceState::Uninitialized;
 
         com_ptr<IActivateAudioInterfaceAsyncOperation> asyncOp;
-        check_hresult(ActivateAudioInterfaceAsync(m_deviceIdString.c_str(), __uuidof(IAudioClient3), nullptr, this, asyncOp.put()));
+
+        LOGI() << "before ActivateAudioInterfaceAsync";
+        auto hres = ActivateAudioInterfaceAsync(m_deviceIdString.c_str(), __uuidof(IAudioClient3), nullptr, this, asyncOp.put());
+        LOGI() << "after ActivateAudioInterfaceAsync, before check_hresult";
+
+        check_hresult(hres);
+        LOGI() << "after check_hresult";
     } catch (...) {
-        setStateAndNotify(DeviceState::Error, to_hresult());
+        EEEE_CATCH;
+        auto e =  to_hresult();
+        LOGI() << "survived to_hresult";
+        setStateAndNotify(DeviceState::Error, e);
     }
+
+    LOGI() << "survived";
 }
 
 static void logWAVEFORMATEX(WAVEFORMATEX* format)
@@ -159,39 +196,60 @@ static void logWAVEFORMATEX(WAVEFORMATEX* format)
 //
 HRESULT WasapiAudioClient::ActivateCompleted(IActivateAudioInterfaceAsyncOperation* operation) noexcept
 {
+    EEEEE;
+
     try {
+        EEEE_TRY;
         if (m_deviceState != DeviceState::Uninitialized) {
+            LOGI() << "not uninitialized";
             throw hresult_error(E_NOT_VALID_STATE);
         }
+
+        LOGI() << "survived uninitialized";
 
         // Check for a successful activation result
         HRESULT hrActivateResult = S_OK;
         com_ptr<::IUnknown> punkAudioInterface;
-        check_hresult(operation->GetActivateResult(&hrActivateResult, punkAudioInterface.put()));
+
+        LOGI() << "before operation->GetActivateResult(&hrActivateResult, punkAudioInterface.put())";
+        auto hr = operation->GetActivateResult(&hrActivateResult, punkAudioInterface.put());
+        LOGI() << "going to check hresult of operation->GetActivateResult(&hrActivateResult, punkAudioInterface.put())";
+        check_hresult(hr);
+        LOGI() << "survived hresult of operation->GetActivateResult(&hrActivateResult, punkAudioInterface.put())";
         check_hresult(hrActivateResult);
+        LOGI() << "survived check_hresult(hrActivateResult)";
 
         // Remember that we have been activated, but don't raise the event yet.
         setState(DeviceState::Activated);
+        LOGI() << "survived setState(DeviceState::Activated);";
 
         // Get the pointer for the Audio Client
         m_audioClient = punkAudioInterface.as<IAudioClient3>();
+        LOGI() << "survived m_audioClient = punkAudioInterface.as<IAudioClient3>();";
 
         // Configure user defined properties
         check_hresult(configureDeviceInternal());
+        LOGI() << "survived  check_hresult(configureDeviceInternal());";
 
         // Initialize the AudioClient in Shared Mode with the user specified buffer
         if (!m_isLowLatency) {
-            check_hresult(m_audioClient->Initialize(AUDCLNT_SHAREMODE_SHARED,
-                                                    AUDCLNT_STREAMFLAGS_EVENTCALLBACK | AUDCLNT_STREAMFLAGS_NOPERSIST,
-                                                    m_hnsBufferDuration,
-                                                    0,
-                                                    m_mixFormat.get(),
-                                                    nullptr));
+            auto h = m_audioClient->Initialize(AUDCLNT_SHAREMODE_SHARED,
+                                               AUDCLNT_STREAMFLAGS_EVENTCALLBACK | AUDCLNT_STREAMFLAGS_NOPERSIST,
+                                               m_hnsBufferDuration,
+                                               0,
+                                               m_mixFormat.get(),
+                                               nullptr);
+            LOGI() << "survived m_audioClient->Initialize(AUDCLNT_SHAREMODE_SHARED,";
+            check_hresult(h);
+            LOGI() << "survived check_hresult(m_audioClient->initialize";
         } else {
-            check_hresult(m_audioClient->InitializeSharedAudioStream(AUDCLNT_STREAMFLAGS_EVENTCALLBACK,
-                                                                     m_minPeriodInFrames,
-                                                                     m_mixFormat.get(),
-                                                                     nullptr));
+            LOGI() << "survived m_audioClient->InitializeSharedAudioStream(AUDCLNT_STREAMFLAGS_EVENTCALLBACK,";
+            auto h = m_audioClient->InitializeSharedAudioStream(AUDCLNT_STREAMFLAGS_EVENTCALLBACK,
+                                                                m_minPeriodInFrames,
+                                                                m_mixFormat.get(),
+                                                                nullptr);
+            check_hresult(h);
+            LOGI() << "survived check_hresult(m_audioClient->InitializeSharedAudioStream";
         }
 
         LOGI() << "Initialized WASAPI audio endpoint with: ";
@@ -204,25 +262,41 @@ HRESULT WasapiAudioClient::ActivateCompleted(IActivateAudioInterfaceAsyncOperati
         LOGI() << "Min period in frames: " << m_minPeriodInFrames;
 
         // Get the maximum size of the AudioClient Buffer
-        check_hresult(m_audioClient->GetBufferSize(&m_bufferFrames));
+        hr = m_audioClient->GetBufferSize(&m_bufferFrames);
+        LOGI() << "survived m_audioClient->GetBufferSize(&m_bufferFrames);";
+        check_hresult(hr);
+        LOGI() << "survived check_hresult(m_audioClient->GetBufferSize(&m_bufferFrames);";
 
         // Get the render client
         m_audioRenderClient.capture(m_audioClient, &IAudioClient::GetService);
+        LOGI() << "survived m_audioRenderClient.capture(m_audioClient, &IAudioClient::GetService);";
 
         // Create Async callback for sample events
-        check_hresult(MFCreateAsyncResult(nullptr, &m_sampleReadyCallback, nullptr, m_sampleReadyAsyncResult.put()));
+        hr = MFCreateAsyncResult(nullptr, &m_sampleReadyCallback, nullptr, m_sampleReadyAsyncResult.put());
+        LOGI() << "survived MFCreateAsyncResult(nullptr, &m_sampleReadyCallback, nullptr, m_sampleReadyAsyncResult.put());";
+        check_hresult(hr);
+        LOGI() << "survived check_hresult(MFCreateAsyncResult(nullptr, &m_sampleReadyCallback, nullptr, m_sampleReadyAsyncResult.put());";
 
         // Sets the event handle that the system signals when an audio buffer is ready to be processed by the client
-        check_hresult(m_audioClient->SetEventHandle(m_sampleReadyEvent.get()));
+        m_audioClient->SetEventHandle(m_sampleReadyEvent.get());
+        LOGI() << "survived m_audioClient->SetEventHandle(m_sampleReadyEvent.get())";
+        check_hresult(hr);
+        LOGI() << "survivied check_hresult(m_audioClient->SetEventHandle(m_sampleReadyEvent.get())";
 
         // Everything succeeded
         setStateAndNotify(DeviceState::Initialized, S_OK);
+        LOGI() << "survivied setStateAndNotify(DeviceState::Initialized, S_OK);";
 
         startPlayback();
+        LOGI() << "survived startPlayback";
 
         return S_OK;
     } catch (...) {
-        setStateAndNotify(DeviceState::Error, to_hresult());
+        EEEE_CATCH;
+        auto e = to_hresult();
+        LOGI() << "survvied to_hresult";
+        setStateAndNotify(DeviceState::Error, e);
+        LOGI() << "survived setStateAndNotify(Error";
 
         m_audioClient = nullptr;
         m_audioRenderClient = nullptr;
@@ -242,6 +316,7 @@ HRESULT WasapiAudioClient::ActivateCompleted(IActivateAudioInterfaceAsyncOperati
 //
 UINT32 WasapiAudioClient::getBufferFramesPerPeriod() noexcept
 {
+    EEEEE;
     REFERENCE_TIME defaultDevicePeriod = 0;
     REFERENCE_TIME minimumDevicePeriod = 0;
 
@@ -255,7 +330,9 @@ UINT32 WasapiAudioClient::getBufferFramesPerPeriod() noexcept
 
     // Get the audio device period
     HRESULT hr = m_audioClient->GetDevicePeriod(&defaultDevicePeriod, &minimumDevicePeriod);
+    LOGI() << "survived m_audioClient->GetDevicePeriod";
     if (FAILED(hr)) {
+        LOGI() << "it failed though";
         return 0;
     }
 
@@ -270,7 +347,9 @@ UINT32 WasapiAudioClient::getBufferFramesPerPeriod() noexcept
 //
 HRESULT WasapiAudioClient::configureDeviceInternal() noexcept
 {
+    EEEEE;
     try {
+        EEEE_TRY;
         if (m_deviceState != DeviceState::Activated) {
             return E_NOT_VALID_STATE;
         }
@@ -286,7 +365,10 @@ HRESULT WasapiAudioClient::configureDeviceInternal() noexcept
         }
 
         LOGI() << "WASAPI: Settings device client properties";
-        check_hresult(m_audioClient->SetClientProperties(&audioProps));
+        auto hr = m_audioClient->SetClientProperties(&audioProps);
+        LOGI() << "survived m_audioClient->SetClientProperties(&audioProps)";
+        check_hresult(hr);
+        LOGI() << "survived check_hresult(m_audioClient->SetClientProperties(&audioProps));";
 
         // If application already has a preferred source format available,
         // it can test whether the format is supported by the device:
@@ -304,7 +386,10 @@ HRESULT WasapiAudioClient::configureDeviceInternal() noexcept
 
         // This sample opens the device is shared mode so we need to find the supported WAVEFORMATEX mix format
         LOGI() << "WASAPI: Getting device mix format";
-        check_hresult(m_audioClient->GetMixFormat(m_mixFormat.put()));
+        hr = m_audioClient->GetMixFormat(m_mixFormat.put());
+        LOGI() << "survived m_audioClient->GetMixFormat(m_mixFormat.put())";
+        check_hresult(hr);
+        LOGI() << "survived check_hersult(m_audioClient->GetMixFormat(m_mixFormat.put()))";
 
         LOGI() << "WASAPI: Mix format after getting from audio client:";
         logWAVEFORMATEX(m_mixFormat.get());
@@ -320,8 +405,10 @@ HRESULT WasapiAudioClient::configureDeviceInternal() noexcept
         logWAVEFORMATEX(m_mixFormat.get());
 
         if (m_useClosestSupportedFormat) {
+            LOGI() << "m_useClosestSupportedFormat";
             unique_cotaskmem_ptr<WAVEFORMATEX> closestSupported;
             m_audioClient->IsFormatSupported(AUDCLNT_SHAREMODE_SHARED, m_mixFormat.get(), closestSupported.put());
+            LOGI() << "survived m_audioClient->IsFormatSupported";
 
             logWAVEFORMATEX(closestSupported.get());
             m_mixFormat = std::move(closestSupported);
@@ -331,16 +418,22 @@ HRESULT WasapiAudioClient::configureDeviceInternal() noexcept
             LOGI() << "WASAPI: Getting shared mode engine period";
             // The wfx parameter below is optional (Its needed only for MATCH_FORMAT clients). Otherwise, wfx will be assumed
             // to be the current engine format based on the processing mode for this stream
-            check_hresult(m_audioClient->GetSharedModeEnginePeriod(m_mixFormat.get(), &m_defaultPeriodInFrames,
-                                                                   &m_fundamentalPeriodInFrames,
-                                                                   &m_minPeriodInFrames, &m_maxPeriodInFrames));
+            auto h = m_audioClient->GetSharedModeEnginePeriod(m_mixFormat.get(), &m_defaultPeriodInFrames,
+                                                              &m_fundamentalPeriodInFrames,
+                                                              &m_minPeriodInFrames, &m_maxPeriodInFrames);
+            LOGI() << "survived m_audioClient->GetSharedModeEnginePeriod";
+            check_hresult(h);
+            LOGI() << "survived check_hresult(m_audioClient->GetSharedModeEnginePeriod)";
         }
 
         LOGI() << "WASAPI: Device successfully configured";
 
         return S_OK;
     } catch (...) {
-        return to_hresult();
+        EEEE_CATCH;
+        auto r =  to_hresult();
+        LOGI() << "survived to_hresult";
+        return r;
     }
 }
 
@@ -352,6 +445,7 @@ HRESULT WasapiAudioClient::configureDeviceInternal() noexcept
 //
 void WasapiAudioClient::validateBufferValue()
 {
+    EEEEE;
     if (!m_isHWOffload) {
         // If we aren't using HW Offload, set this to 0 to use the default value
         m_hnsBufferDuration = 0;
@@ -361,7 +455,12 @@ void WasapiAudioClient::validateBufferValue()
     REFERENCE_TIME hnsMinBufferDuration;
     REFERENCE_TIME hnsMaxBufferDuration;
 
-    check_hresult(m_audioClient->GetBufferSizeLimits(m_mixFormat.get(), true, &hnsMinBufferDuration, &hnsMaxBufferDuration));
+    auto hr = m_audioClient->GetBufferSizeLimits(m_mixFormat.get(), true, &hnsMinBufferDuration, &hnsMaxBufferDuration);
+    LOGI() << "survived m_audioClient->GetBufferSizeLimits(m_mixFormat.get(), true, &hnsMinBufferDuration, &hnsMaxBufferDuration)";
+    check_hresult(hr);
+    LOGI() <<
+        "survived check_hresult(m_audioClient->GetBufferSizeLimits(m_mixFormat.get(), true, &hnsMinBufferDuration, &hnsMaxBufferDuration))";
+
     if (m_hnsBufferDuration < hnsMinBufferDuration) {
         // using MINIMUM size instead
         m_hnsBufferDuration = hnsMinBufferDuration;
@@ -379,24 +478,31 @@ void WasapiAudioClient::validateBufferValue()
 //
 void WasapiAudioClient::startPlayback() noexcept
 {
+    EEEEE;
     try {
+        EEEE_TRY;
         switch (m_deviceState) {
         // We should be stopped if the user stopped playback, or we should be
         // initialized if this is the first time through getting ready to playback.
         case DeviceState::Stopped:
-        case DeviceState::Initialized:
+        case DeviceState::Initialized: {
             setStateAndNotify(DeviceState::Starting, S_OK);
-            check_hresult(MFPutWorkItem2(MFASYNC_CALLBACK_QUEUE_MULTITHREADED, 0, &m_startPlaybackCallback, nullptr));
+            auto hr = MFPutWorkItem2(MFASYNC_CALLBACK_QUEUE_MULTITHREADED, 0, &m_startPlaybackCallback, nullptr);
+            LOGI() << "survived MFPutWorkItem2(MFASYNC_CALLBACK_QUEUE_MULTITHREADED, 0, &m_startPlaybackCallback, nullptr)";
+            check_hresult(hr);
+            LOGI() << "survived check_hresult(MFPutWorkItem2(MFASYNC_CALLBACK_QUEUE_MULTITHREADED, 0, &m_startPlaybackCallback, nullptr))";
             break;
-
+        }
         default:
             // Otherwise something else happened
             throw hresult_error(E_FAIL);
         }
     } catch (...) {
+        EEEE_CATCH;
         hresult error = to_hresult();
+        LOGI() << "survived to_hresult";
         setStateAndNotify(DeviceState::Error, error);
-
+        LOGI() << "survived setStateAndNotify";
         SetEvent(m_clientFailedToStartEvent);
     }
 }
@@ -408,24 +514,40 @@ void WasapiAudioClient::startPlayback() noexcept
 //
 HRESULT WasapiAudioClient::onStartPlayback(IMFAsyncResult*) noexcept
 {
+    EEEEE;
     try {
+        EEEE_TRY;
         // Pre-Roll the buffer with silence
         onAudioSampleRequested(true);
+        LOGI() << "survived onAurioSampleRequested";
 
         // Set the initial volume.
         //SetAudioClientChannelVolume();
 
         // Actually start the playback
-        check_hresult(m_audioClient->Start());
+        auto hr = m_audioClient->Start();
+        LOGI() << "survived m_audioClient->Start()";
+        check_hresult(hr);
+        LOGI() << "survivied check_hresult(m_audioClient->Start());";
 
         setStateAndNotify(DeviceState::Playing, S_OK);
-        check_hresult(MFPutWaitingWorkItem(m_sampleReadyEvent.get(), 0, m_sampleReadyAsyncResult.get(), &m_sampleReadyKey));
+        LOGI() << "survived setStateAndNotify";
+
+        hr = MFPutWaitingWorkItem(m_sampleReadyEvent.get(), 0, m_sampleReadyAsyncResult.get(), &m_sampleReadyKey);
+        LOGI() << "survived MFPutWaitingWorkItem(m_sampleReadyEvent.get(), 0, m_sampleReadyAsyncResult.get(), &m_sampleReadyKey)";
+        check_hresult(hr);
+        LOGI() <<
+            "survived check_hresult(MFPutWaitingWorkItem(m_sampleReadyEvent.get(), 0, m_sampleReadyAsyncResult.get(), &m_sampleReadyKey))";
 
         SetEvent(m_clientStartedEvent);
 
         return S_OK;
     } catch (...) {
-        setStateAndNotify(DeviceState::Error, to_hresult());
+        EEEE_CATCH;
+        hresult error = to_hresult();
+        LOGI() << "survived to_hresult";
+        setStateAndNotify(DeviceState::Error, error);
+        LOGI() << "survived setStateAndNotify";
 
         SetEvent(m_clientFailedToStartEvent);
 
@@ -441,6 +563,7 @@ HRESULT WasapiAudioClient::onStartPlayback(IMFAsyncResult*) noexcept
 //
 HRESULT WasapiAudioClient::stopPlaybackAsync() noexcept
 {
+    EEEEE;
     if ((m_deviceState != DeviceState::Playing)
         && (m_deviceState != DeviceState::Paused)
         && (m_deviceState != DeviceState::Error)) {
@@ -459,6 +582,7 @@ HRESULT WasapiAudioClient::stopPlaybackAsync() noexcept
 //
 HRESULT WasapiAudioClient::onStopPlayback(IMFAsyncResult*)
 {
+    EEEEE;
     // Stop playback by cancelling Work Item
     // Cancel the queued work item (if any)
 
@@ -489,7 +613,9 @@ HRESULT WasapiAudioClient::onStopPlayback(IMFAsyncResult*)
 //
 HRESULT WasapiAudioClient::onSampleReady(IMFAsyncResult*)
 {
+    EEEEE;
     try {
+        EEEE_TRY;
         onAudioSampleRequested(false);
 
         // Re-queue work item for next sample
@@ -499,6 +625,7 @@ HRESULT WasapiAudioClient::onSampleReady(IMFAsyncResult*)
 
         return S_OK;
     } catch (...) {
+        EEEE_CATCH;
         hresult error = to_hresult();
         setStateAndNotify(DeviceState::Error, error);
         return error;
@@ -512,7 +639,9 @@ HRESULT WasapiAudioClient::onSampleReady(IMFAsyncResult*)
 //
 void WasapiAudioClient::onAudioSampleRequested(bool IsSilence)
 {
+    EEEEE;
     try {
+        EEEE_TRY;
         auto guard = slim_lock_guard(m_lock);
 
         // Get padding in existing buffer
@@ -546,6 +675,7 @@ void WasapiAudioClient::onAudioSampleRequested(bool IsSilence)
     }
     catch (hresult_error const& error)
     {
+        EEEE_CATCH;
         if (error.code() != AUDCLNT_E_RESOURCES_INVALIDATED) {
             throw;
         }
@@ -564,6 +694,7 @@ void WasapiAudioClient::onAudioSampleRequested(bool IsSilence)
 
 void WasapiAudioClient::getSamples(uint32_t framesAvailable)
 {
+    EEEEE;
     uint8_t* data;
 
     uint32_t actualFramesToRead = framesAvailable;
@@ -587,6 +718,7 @@ void WasapiAudioClient::setState(const DeviceState newState)
 
 void WasapiAudioClient::setStateAndNotify(const DeviceState newState, hresult resultCode)
 {
+    LOGI() << "entering";
     if (m_deviceState == newState) {
         return;
     }
@@ -674,6 +806,7 @@ void WasapiAudioClient::setStateAndNotify(const DeviceState newState, hresult re
         break;
 
     case S_OK:
+        errMsg = "S_OK";
         break;
 
     default:
