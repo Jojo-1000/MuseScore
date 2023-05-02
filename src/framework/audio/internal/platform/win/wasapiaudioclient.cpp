@@ -347,6 +347,29 @@ UINT32 WasapiAudioClient::getBufferFramesPerPeriod() noexcept
 //
 HRESULT WasapiAudioClient::configureDeviceInternal() noexcept
 {
+    LOGI() << "Entering configureDeviceInternal; doing some tests first";
+    try
+    {
+        LOGI() << "Throw runtime error";
+        throw std::runtime_error("");
+    }
+    catch (...)
+    {
+        LOGI() << "Caught runtime error";
+    }
+
+    try
+    {
+        LOGI() << "Throw hresult error";
+        check_hresult(AUDCLNT_E_UNSUPPORTED_FORMAT);
+    }
+    catch (...)
+    {
+        LOGI() << "Caught hresult";
+        HRESULT h = to_hresult();
+        LOGI() << "Converted hresult: " << h;
+    }
+
     EEEEE;
     try {
         EEEE_TRY;
