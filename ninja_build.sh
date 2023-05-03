@@ -87,7 +87,9 @@ function do_build() {
         -DCMAKE_SKIP_RPATH="${MUSESCORE_NO_RPATH}" \
 
 
-    ninja -j $JOBS 
+    cat CMakeCache.txt
+    echo "================================================================================================"
+    ninja -v -j $JOBS
 }
 
 
