@@ -5,9 +5,9 @@ on:
     branches:
     - master
     
-  schedule:
-    - cron: '0 3 */1 */1 *' # At 03:00 on every day-of-month for master
-    # - cron: '0 5 */1 */1 *' # At 05:00 on every day-of-month for current release branch
+  #schedule:
+  #  - cron: '0 3 */1 */1 *' # At 03:00 on every day-of-month for master
+  #  - cron: '0 5 */1 */1 *' # At 05:00 on every day-of-month for current release branch
   workflow_dispatch:
     inputs:
       build_mode:
@@ -177,6 +177,7 @@ jobs:
       if: env.DO_BUILD == 'true'
       shell: bash
       run: |
+        cp build.release/src/app/MuseScore4.pdb build.artifacts
         bash ./build/ci/windows/dumpsyms.sh
     - name: Package
       if: env.DO_BUILD == 'true'
@@ -185,7 +186,7 @@ jobs:
         IF ${{ secrets.WIN_SIGN_CERTIFICATE_ENCRYPT_SECRET != 0 }} == true ( SET S_S=${{ secrets.WIN_SIGN_CERTIFICATE_ENCRYPT_SECRET }} ) ELSE ( SET S_S="''" )
         IF ${{ secrets.WIN_SIGN_CERTIFICATE_PASSWORD != 0 }} == true ( SET S_P=${{ secrets.WIN_SIGN_CERTIFICATE_PASSWORD }} ) ELSE ( SET S_P="''" )
         IF ${{ env.BUILD_MODE }} == stable_build ( SET GUID=${{ secrets.WIN_MSI_STABLE_MU4_GUID }} ) ELSE ( SET GUID=${{ secrets.WIN_MSI_TESTING_MU4_GUID }} )
-        build\ci\windows\package.bat --signsecret %S_S% --signpass %S_P% --guid %GUID%
+        build\ci\windows\package.bat
     - name: Checksum 
       if: env.DO_BUILD == 'true'
       run: |
