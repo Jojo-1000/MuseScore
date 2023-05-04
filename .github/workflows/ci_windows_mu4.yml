@@ -177,7 +177,8 @@ jobs:
       if: env.DO_BUILD == 'true'
       shell: bash
       run: |
-        cp build.release/src/app/MuseScore4.pdb build.artifacts
+        cp build.release/src/app/MuseScore4.exe build.artifacts/
+        cp build.release/src/app/MuseScore4.pdb build.artifacts/
         bash ./build/ci/windows/dumpsyms.sh
     - name: Package
       if: env.DO_BUILD == 'true'
@@ -280,7 +281,9 @@ jobs:
     - name: Package
       if: env.DO_BUILD == 'true'
       shell: cmd
-      run: |      
+      run: |
+        cp build.release/src/app/MuseScore4.exe build.artifacts/
+        cp build.release/src/app/MuseScore4.pdb build.artifacts/
         build\ci\windows\package.bat --portable ON 
     - name: Checksum 
       if: env.DO_BUILD == 'true'
