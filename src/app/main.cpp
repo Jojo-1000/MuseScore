@@ -331,6 +331,11 @@ int main(int argc, char** argv)
     char** argvFinal = argv;
 
 #endif
+	try {
+		throw std::runtime_error("Main");
+	} catch (...) {
+		LOGI() << "Caught main runtime error";
+	}
 
     int code = app.run(argcFinal, argvFinal);
     LOGI() << "Goodbye!! code: " << code;
